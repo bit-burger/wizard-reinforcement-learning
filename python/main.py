@@ -1,20 +1,14 @@
-import json
-config = json.load(open("../config.json"))
+import features # ignore: unused-import
+from python.config import client, token
 
-import discord
-
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
-client = discord.Client(intents=intents)
 
 @client.event
-async def on_ready():
+async def ready():
     print(f'{client.user} has connected to Discord!')
 
 
 @client.event
-async def on_message(message):
+async def message(message):
     print("message received")
     if message.author == client.user:
         return
@@ -23,4 +17,4 @@ async def on_message(message):
         await message.channel.send('PONG!')
 
 
-client.run(config["token"])
+client.run(token)
