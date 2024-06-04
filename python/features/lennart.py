@@ -7,12 +7,12 @@ from discord.ui import Button
 import re
 import time
 
-from python.config import client
+from config import client
 
 
-process = subprocess.Popen(
-            [r"C:\Users\lenna\OneDrive - Students RWTH Aachen University\coden\C\Wizzard\cmake-build-debug\C.exe"],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+# process = subprocess.Popen(
+#             [r"C:\Users\lenna\OneDrive - Students RWTH Aachen University\coden\C\Wizzard\cmake-build-debug\C.exe"],
+#             stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
 
 class MyView(discord.ui.View):
     def __init__(self, channel):
@@ -35,18 +35,17 @@ class MyView(discord.ui.View):
 
 def handlewizzard(eingabe):
     # Simulate the inputs for the C program
-    print(eingabe, file=process.stdin)
-    output = process.stdout.readline()
-    print(output)
+    # print(eingabe, file=process.stdin)
+    # output = process.stdout.readline()
+    # print(output)
+    ...
 
 
 def closewizzard():
-    process.stdin.close()
-    process.stdout.close()
-    process.wait()
-
-
-
+    # process.stdin.close()
+    # process.stdout.close()
+    # process.wait()
+    ...
 
 
 
@@ -87,9 +86,9 @@ async def message(m: discord.Message):
             #stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
 
         # Simulate the inputs for the C program
-        print("", file=process.stdin)
-        output = process.stdout.readline()
-        await m.channel.send(f"Output: {output}")
+        # print("", file=process.stdin)
+        # output = process.stdout.readline()
+        # await m.channel.send(f"Output: {output}")
         await m.channel.send("", view=MyView(m.channel))
 
 
