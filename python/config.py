@@ -1,9 +1,9 @@
 import discord
 import json
 
-from python.multiple_event_client import MultipleEventClient
+from multiple_event_client import MultipleEventClient
 
-config = json.load(open("config.json"))
+config = json.load(open("../config.json"))
 token = config["token"]
 
 intents = discord.Intents.default()

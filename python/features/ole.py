@@ -1,6 +1,6 @@
 import discord
 
-from python.config import client
+from config import client
 import discord.ext
 
 def has_ole(m: discord.Message):

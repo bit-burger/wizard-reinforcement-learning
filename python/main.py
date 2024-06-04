@@ -1,5 +1,5 @@
 import features
-from python.config import client, token
+from config import client, token
 
 
 @client.event

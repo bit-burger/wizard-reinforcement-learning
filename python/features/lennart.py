@@ -1,7 +1,8 @@
 import discord
 import re
 
-from python.config import client
+from config import client
+
 
 @client.event
 async def message(m: discord.Message):
