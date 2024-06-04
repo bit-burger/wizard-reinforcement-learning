@@ -1,9 +1,12 @@
 # How to add a python feature
 
 ## Create new file `feature.py`
+
 ```py
-from python.config import client
+from python import client
 import discord
+
+
 @client.event
 async def message(m: discord.Message):
     print(m.content)

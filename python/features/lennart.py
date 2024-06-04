@@ -1,14 +1,11 @@
 import asyncio
-import subprocess
-
 import discord
-from discord.ext import commands
-from discord import Embed, ButtonStyle, SelectOption, SelectMenu
-from discord.ui import Button
 import re
 import time
 
 from config import client
+
+previous_audit_logs = []
 
 
 # process = subprocess.Popen(
@@ -49,7 +46,6 @@ def closewizzard():
     # process.stdout.close()
     # process.wait()
     ...
-
 
 
 @client.event
@@ -111,23 +107,33 @@ async def message_edit(before: discord.Message, after: discord.Message):
             await after.channel.send("Danke Mensa Bot")
 
 
-# @client.event
+@client.event
 async def voice_state_update(member, before, after):
     # Prüfen, ob das Mitglied aus einem Sprachkanal gekickt wurde
+    if (len(previous_audit_logs) == 0):
+        async for entry in member.guild.audit_logs(limit=10, action=discord.AuditLogAction.member_disconnect):
+            previous_audit_logs.append(entry)
     if before.channel is not None and after.channel is None:
-        guild = member.guild
-        # Zugriff auf die letzten Audit-Log-Einträge
-        x = guild.audit_logs(limit=1, action=discord.AuditLogAction.member_disconnect)
-        kicker = x.user
-        await kicker.move_to(None)  # Den "Kicker" aus dem Sprachkanal entfernen
-        await member.send(f'{kicker.display_name} wurde gekickt, weil er dich gekickt hat!')
-        await kicker.send('Du wurdest gekickt, weil du jemanden gekickt hast!')
+        await check_audit_logs_efficient(member.guild)
 
 
-previous_audit_logs = []
+async def check_audit_logs_efficient(guild):
+    global previous_audit_logs
+    current_audit_logs = []
+    async for entry in guild.audit_logs(limit=10, action=discord.AuditLogAction.member_disconnect):
+        current_audit_logs.append(entry)
+    changed_entry = find_changed_entry(previous_audit_logs, current_audit_logs)
+    if changed_entry is not None:
+        print("Audit log has changed!")
+        kicker = changed_entry.user
+        print(f"User who made the change: {kicker.name}")
+        user = discord.utils.get(guild.members, name=kicker.name)
+        await user.move_to(None)
+        await asyncio.sleep(2)
+        previous_audit_logs = current_audit_logs
 
 
-def find_changed_entry(previous, current):
+async def find_changed_entry(previous, current):
     for previous_entry, current_entry in zip(previous, current):
         if current_entry.user == previous_entry.user and current_entry.action == previous_entry.action:
             if current_entry.extra.count != previous_entry.extra.count:
@@ -141,19 +147,8 @@ async def check_audit_logs(guild):
     async for entry in guild.audit_logs(limit=10, action=discord.AuditLogAction.member_disconnect):
         previous_audit_logs.append(entry)
     while True:
-        current_audit_logs = []
-        async for entry in guild.audit_logs(limit=10, action=discord.AuditLogAction.member_disconnect):
-            current_audit_logs.append(entry)
-        changed_entry = find_changed_entry(previous_audit_logs, current_audit_logs)
-        if changed_entry is not None:
-            print("Audit log has changed!")
-            kicker = changed_entry.user
-            print(f"User who made the change: {kicker.name}")
-            user = discord.utils.get(guild.members, name=kicker.name)
-            await user.move_to(None)
-            await asyncio.sleep(2)
-            previous_audit_logs = current_audit_logs
-            await asyncio.sleep(2)  # Warte 5 Sekunden
+        await check_audit_logs(guild)
+
 
 @client.event
 async def ready():

@@ -1,7 +1,7 @@
 import discord
-
 from config import client
 import discord.ext
+
 
 def has_ole(m: discord.Message):
     if "ole" in m.content:
@@ -10,6 +10,7 @@ def has_ole(m: discord.Message):
         if mention.id == 724949595330969643:
             return True
     return False
+
 
 @client.event
 async def message(m: discord.Message):
