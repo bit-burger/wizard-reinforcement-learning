@@ -110,9 +110,6 @@ async def message_edit(before: discord.Message, after: discord.Message):
 @client.event
 async def voice_state_update(member, before, after):
     # Prüfen, ob das Mitglied aus einem Sprachkanal gekickt wurde
-    if (len(previous_audit_logs) == 0):
-        async for entry in member.guild.audit_logs(limit=10, action=discord.AuditLogAction.member_disconnect):
-            previous_audit_logs.append(entry)
     if before.channel is not None and after.channel is None:
         await check_audit_logs_efficient(member.guild)
 
@@ -122,7 +119,7 @@ async def check_audit_logs_efficient(guild):
     current_audit_logs = []
     async for entry in guild.audit_logs(limit=10, action=discord.AuditLogAction.member_disconnect):
         current_audit_logs.append(entry)
-    changed_entry = find_changed_entry(previous_audit_logs, current_audit_logs)
+    changed_entry = await find_changed_entry(previous_audit_logs, current_audit_logs)
     if changed_entry is not None:
         print("Audit log has changed!")
         kicker = changed_entry.user
@@ -152,5 +149,6 @@ async def check_audit_logs(guild):
 
 @client.event
 async def ready():
-    guild = client.get_guild(1205582028905648209)  # Ersetzen Sie YOUR_GUILD_ID durch die ID Ihres Servers
-    await check_audit_logs(guild)
+    guild = client.get_guild(1205582028905648209)
+    async for entry in guild.audit_logs(limit=10, action=discord.AuditLogAction.member_disconnect):
+        previous_audit_logs.append(entry)
