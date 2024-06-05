@@ -103,7 +103,9 @@ async def message_edit(before: discord.Message, after: discord.Message):
 
 
 @client.event
-async def voice_state_update(member, before, after):
+async def voice_state_update(member: discord.Member, before, after):
+    if member.bot == True:
+        return
     if after.deaf == True or after.mute == True:
         print(f"{member} has been deafend or muted.")
         await member.edit(mute=False, deafen=False)
@@ -132,7 +134,7 @@ async def find_changed_entry(previous, current):
     for previous_entry, current_entry in zip(previous, current):
         if current_entry.user == previous_entry.user and current_entry.action == previous_entry.action:
             if current_entry.extra.count != previous_entry.extra.count:
-                if current_entry.user.id != 1247322345333461093: #Der Bot selbst
+                if current_entry.user.id != client.user.id: #Der Bot selbst
                     return current_entry
     return None
 
