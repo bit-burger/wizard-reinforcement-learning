@@ -59,13 +59,13 @@ async def message(m: discord.Message):
     # Tony muten
     if m.author.id == 444417560100864020:  # Lennart
         if m.content == "Tony muten":
-            user_to_mute = discord.utils.get(m.guild.members, id=708227359916163137) #Tony
+            user_to_mute = discord.utils.get(m.guild.members, id=708227359916163137)  # Tony
             dauermute = True
             while dauermute:
                 await user_to_mute.edit(mute=True, deafen=True)
                 time.sleep(1)
         if m.content == "Tony entmuten":
-            user_to_mute = discord.utils.get(m.guild.members, id=708227359916163137) #Tony
+            user_to_mute = discord.utils.get(m.guild.members, id=708227359916163137)  # Tony
             dauermute = False
             await user_to_mute.edit(mute=False, deafen=False)
 
@@ -104,9 +104,9 @@ async def message_edit(before: discord.Message, after: discord.Message):
 
 @client.event
 async def voice_state_update(member: discord.Member, before, after):
-    if member.bot == True:
-        return
-    if after.deaf == True or after.mute == True:
+    if member.bot:
+         return
+    if after.deaf is True or after.mute is True:
         print(f"{member} has been deafend or muted.")
         await member.edit(mute=False, deafen=False)
     # Prüfen, ob das Mitglied aus einem Sprachkanal gekickt wurde
@@ -132,25 +132,14 @@ async def check_audit_logs_efficient(guild):
 
 async def find_changed_entry(previous, current):
     for previous_entry, current_entry in zip(previous, current):
-        if current_entry.user == previous_entry.user and current_entry.action == previous_entry.action:
-            if current_entry.extra.count != previous_entry.extra.count:
-                if current_entry.user.id != client.user.id: #Der Bot selbst
-                    return current_entry
+        if current_entry.extra.count != previous_entry.extra.count:
+            if current_entry.user.id != client.user.id:  # Der Bot selbst
+                return current_entry
     return None
-
-
-async def check_audit_logs(guild):
-    global previous_audit_logs
-    async for entry in guild.audit_logs(limit=10, action=discord.AuditLogAction.member_disconnect):
-        previous_audit_logs.append(entry)
-    while True:
-        await check_audit_logs(guild)
 
 
 @client.event
 async def ready():
-    guild = client.get_guild(1205582028905648209)   #Quandale dingle
+    guild = client.get_guild(1205582028905648209)  # Quandale dingle
     async for entry in guild.audit_logs(limit=10, action=discord.AuditLogAction.member_disconnect):
         previous_audit_logs.append(entry)
-
-
