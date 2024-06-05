@@ -104,8 +104,8 @@ async def message_edit(before: discord.Message, after: discord.Message):
 
 @client.event
 async def voice_state_update(member: discord.Member, before, after):
-    if member.bot:
-         return
+    #if member.bot:
+        #return
     if after.deaf is True or after.mute is True:
         print(f"{member} has been deafend or muted.")
         await member.edit(mute=False, deafen=False)
@@ -124,8 +124,7 @@ async def check_audit_logs_efficient(guild):
         print("Audit log has changed!")
         kicker = changed_entry.user
         print(f"User who made the change: {kicker.name}")
-        user = discord.utils.get(guild.members, name=kicker.name)
-        await user.move_to(None)
+        await kicker.move_to(None)
         await asyncio.sleep(2)
         previous_audit_logs = current_audit_logs
 

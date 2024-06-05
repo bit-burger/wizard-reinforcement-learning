@@ -16,8 +16,8 @@ async def ready():
                           colour=0x00b0f4,
                           timestamp=datetime.now())
 
-    embed.set_author(name="Quandale sein Bot", icon_url=client.user.avatar.url)
+    embed.set_author(name=client.user.name, icon_url=client.user.display_avatar.url)
 
-    embed.set_footer(text="Quandale sein Bot")
+    embed.set_footer(text=client.user.name)
 
     await channel.send(embed=embed)
