@@ -4,12 +4,16 @@ import discord
 from config import client
 import discord.ext
 
-
+im_Kampf = []
 @client.event
 async def message(m: discord.Message):
     if m.id == client.user.id: return
     if "kampf" in m.content.lower() and len(m.mentions) >= 1 and isinstance(m.mentions[0], discord.Member):
         mention = m.mentions[0]
+        if mention in im_Kampf:
+            await m.channel.send(f"<@{mention.id}> ist bereits im Kampf!")
+            return
+        im_Kampf.append(mention)
         await m.channel.send(f"Ich kämpft gegen <@{mention.id}>!")
         await m.channel.send("3...")
         time.sleep(1)
@@ -27,3 +31,4 @@ async def message(m: discord.Message):
                 await mention.move_to(channel)
                 time.sleep(1)
             await mention.move_to(None)
+        im_Kampf.remove(mention)
