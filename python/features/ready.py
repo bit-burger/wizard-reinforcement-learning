@@ -9,6 +9,8 @@ from config import client
 
 @client.event
 async def ready():
+    print(f'{client.user} has connected to Discord!')
+
     guild: discord.Guild = client.get_guild(1205582028905648209)
     channel = guild.get_channel(1247244679381254226)
     embed = discord.Embed(title="Restarted bot",
