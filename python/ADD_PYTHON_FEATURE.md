@@ -3,7 +3,7 @@
 ## Create new file `feature.py`
 
 ```py
-from python import client
+from config import client
 import discord
 
 
