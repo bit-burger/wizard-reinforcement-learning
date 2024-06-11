@@ -6,7 +6,7 @@ stelle = 0
 
 @client.event
 async def message(nachricht):
-    if nachricht.author == client.user:
+    if nachricht.author == client.user or nachricht.author.bot:
         return
 
     if 'quandal' in nachricht.content.lower():
