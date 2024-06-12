@@ -1,4 +1,5 @@
 import re
+import os
 
 from config import client
 import discord
@@ -25,7 +26,7 @@ async def message(nachricht):
 
 
 def update_anzahl():
-    with open(r'features/stellequandaleantworten.txt', 'w', encoding='utf-8') as f:
+    with open(r'../python/stellequandaleantworten.txt', 'w', encoding='utf-8') as f:
         global stelle
         f.flush()
         f.write(str(stelle))
@@ -33,10 +34,17 @@ def update_anzahl():
 
 
 def get_anzahl():
-    with open(r'features/stellequandaleantworten.txt', 'r', encoding='utf-8') as f:
+    with open(r'../python/stellequandaleantworten.txt', 'r', encoding='utf-8') as f:
         global stelle
         stelle = int(f.read().strip())
         f.close()
+
+
+def check_and_create_file():
+    if not os.path.isfile('../python/stellequandaleantworten.txt'):
+        with open('../python/stellequandaleantworten.txt', 'w', encoding='utf-8') as f:
+            f.write('0')
+            f.close()
 
 
 @client.event
@@ -46,6 +54,6 @@ async def ready():
     with open(r'features/quandal.txt', 'r', encoding='utf-8') as f:
         antworten = f.read().split('///')
     f.close()
-    update_anzahl()
+    check_and_create_file()
     get_anzahl()
     print("Quandaleantworten is ready")
