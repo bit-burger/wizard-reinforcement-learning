@@ -18,3 +18,10 @@ async def message(m: discord.Message):
 ```py
 from . import lennart
 ```
+
+# How to set up llama3
+## Install Ollama from their webside
+## Run this in Terminal: 
+```cmd
+ollama run llama3 
+```

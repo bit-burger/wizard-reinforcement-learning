@@ -8,46 +8,6 @@ from config import client
 previous_audit_logs = []
 
 
-# process = subprocess.Popen(
-#             [r"C:\Users\lenna\OneDrive - Students RWTH Aachen University\coden\C\Wizzard\cmake-build-debug\C.exe"],
-#             stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
-
-
-class MyView(discord.ui.View):
-    def __init__(self, channel):
-        super().__init__()  # Aufruf des Konstruktors der Elternklasse
-        self.channel = channel  # Speichern des Parameters in einer Instanzvariablen
-
-    @discord.ui.select(
-        placeholder="",
-        min_values=1,
-        max_values=1,
-        options=[
-            discord.SelectOption(label="1", description=""),
-            discord.SelectOption(label="2", description=""),
-            discord.SelectOption(label="3", description="")
-        ]
-    )
-    async def select_callback(self, select, interaction):
-        await self.channel.send(interaction.values[0])
-        handlewizzard(interaction.values[0])
-
-
-def handlewizzard(eingabe):
-    # Simulate the inputs for the C program
-    # print(eingabe, file=process.stdin)
-    # output = process.stdout.readline()
-    # print(output)
-    ...
-
-
-def closewizzard():
-    # process.stdin.close()
-    # process.stdout.close()
-    # process.wait()
-    ...
-
-
 @client.event
 async def message(m: discord.Message):
     global dauermute
@@ -78,17 +38,6 @@ async def message(m: discord.Message):
     # Henning reagieren
     if re.search("henning du toller mensch", m.content, re.RegexFlag.IGNORECASE):
         await m.channel.send("Henning hat nen kleinen")
-
-    if m.content == "!start_wizard":
-        # process = subprocess.Popen(
-        # [r"C:\Users\lenna\OneDrive - Students RWTH Aachen University\coden\C\Wizzard\cmake-build-debug\C.exe"],
-        # stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
-
-        # Simulate the inputs for the C program
-        # print("", file=process.stdin)
-        # output = process.stdout.readline()
-        # await m.channel.send(f"Output: {output}")
-        await m.channel.send("", view=MyView(m.channel))
 
 
 @client.event
@@ -126,9 +75,6 @@ async def check_audit_logs_efficient(guild):
         print(f"User who made the change: {kicker.name}")
         await kicker.move_to(None)
     previous_audit_logs = current_audit_logs
-
-
-
 
 
 @client.event
