@@ -1,8 +1,7 @@
-import asyncio
 import discord
 import re
 import time
-from .hilfen import find_changed_entry
+from hilfen.entries import find_changed_entry
 
 from config import client
 
