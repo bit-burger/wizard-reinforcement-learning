@@ -62,9 +62,11 @@ async def message(m: discord.Message):
         return
 
     output, timeout = eval_bf(m.content)
-    return_message = "**program output:** ```\n"
     if timeout:
-        return_message += "program timeouted:\n"
+        return_message = "**program timed out:**```\n"
+    else:
+        return_message = "**program output:**```\n"
+
     return_message += output
     return_message += "```"
     await m.reply(content=return_message)
