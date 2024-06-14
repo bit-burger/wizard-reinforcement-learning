@@ -51,7 +51,7 @@ def check_and_create_file():
 async def ready():
     global stelle
     global antworten
-    with open(r'features/quandal.txt', 'r', encoding='utf-8') as f:
+    with open(r'resources/quandale.txt', 'r', encoding='utf-8') as f:
         antworten = f.read().split('///')
     f.close()
     check_and_create_file()
