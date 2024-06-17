@@ -16,7 +16,7 @@ async def lore(interaction: discord.Interaction):
         await interaction.response.send_message(text)
 
 
-@tree.command(name="police report", description="Quandale Police Report", guild=discord.Object(1205582028905648209))
+@tree.command(name="police_report", description="Quandale Police Report", guild=discord.Object(1205582028905648209))
 async def police_report(interaction: discord.Interaction):
     for entry in report:
         await interaction.response.send_message(entry)
