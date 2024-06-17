@@ -16,7 +16,7 @@ async def message(nachricht):
     if re.search("dua[ ]+(lipa)*", nachricht.content):
         await nachricht.channel.send(
             "What's up guys! It's Quandale Dingle here! (RUUEHEHEHEHEHEEHE) I have been arrested for multiple crimes (AHHHHHHHHHHHHH) including: Misgendering Dua Lipa during a concert announcement (WHAT), Selling fake feminine merchandise to unsuspecting fans (OH NO), Declaring war on gendered music genres, and replacing all female pop icons with male impersonators (RUHEHEEHEHEHEHEHEHEHEHEHE X2 speed). I will be escaping prison on, MAY 29TH! After that.... I WILL MAKE THE MUSIC INDUSTRY QUESTION EVERYTHING!")
-    if 'quandal' in nachricht.content.lower():
+    if re.search("([^:]|^)quandale", nachricht.content, re.IGNORECASE):
         global stelle
         if stelle == len(antworten):
             stelle = 0
@@ -56,4 +56,3 @@ async def ready():
     f.close()
     check_and_create_file()
     get_anzahl()
-    print("Quandaleantworten is ready")
