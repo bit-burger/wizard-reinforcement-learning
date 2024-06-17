@@ -1,10 +1,12 @@
+import re
+
 import discord
 from config import client
 import discord.ext
 
 
 def has_ole(m: discord.Message):
-    if "ole" in m.content:
+    if re.search("ole", m.content, re.IGNORECASE):
         return True
     for mention in m.mentions:
         if mention.id == 724949595330969643:
