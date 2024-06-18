@@ -8,8 +8,8 @@ previous_audit_logs = []
 
 @client.event
 async def voice_state_update(member: discord.Member, before, after):
-    #if member.bot:
-        #return
+    if member.bot:
+        return
     # Prüfen, ob das Mitglied gemoved wurde
     if before.channel is not None and after.channel is not None and before.channel != after.channel:
         await check_audit_logs_efficient(member.guild, before, member)
