@@ -54,20 +54,8 @@ async def message(m: discord.Message):
     # nicht auf sich selbst reagieren
     if m.author.id == client.user.id:
         return
-    # Tony id: 444417560100864020
-    # Lennart id: 708227359916163137
-    # Tony muten
-    if m.author.id == 708227359916163137:  # Lennart
-        if m.content == "Tony muten":
-            user_to_mute = discord.utils.get(m.guild.members, id=444417560100864020)  # Tony
-            dauermute = True
-            while dauermute:
-                await user_to_mute.edit(mute=True, deafen=True)
-                time.sleep(1)
-        if m.content == "Tony entmuten":
-            user_to_mute = discord.utils.get(m.guild.members, id=444417560100864020)  # Tony
-            dauermute = False
-            await user_to_mute.edit(mute=False, deafen=False)
+    if message.author.id == 1087435325099483166:
+        await message.delete()
 
     # Wizzard reagieren
     if re.search("wiz?zard", m.content, re.RegexFlag.IGNORECASE):
