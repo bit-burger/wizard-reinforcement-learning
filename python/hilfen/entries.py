@@ -1,6 +1,7 @@
 from config import client
 
 
+# Findet den ersten Eintrag, der sich in einer Liste von Einträgen geändert hat
 async def find_changed_entry(previous, current):
     filtered_previous, filtered_current = filter_bot_entries(previous, current)
     for previous, current in zip(filtered_previous, filtered_current):
