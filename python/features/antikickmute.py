@@ -17,30 +17,13 @@ async def message(m: discord.Message):
     # nicht auf sich selbst reagieren
     if m.author.id == client.user.id:
         return
-    # Tony id: 708227359916163137
-    # Lennart id: 444417560100864020
-    # Tony muten
-    if m.author.id == 444417560100864020:  # Lennart
-        if m.content == "Henning muten":
-            user_to_mute = discord.utils.get(m.guild.members, id=391313166958854174)
-            dauermutehenning = True
-            while dauermutehenning == True:
-                await user_to_mute.edit(mute=True, deafen=True)
-                time.sleep(1)
-        if m.content == "Henning entmuten":
-            user_to_mute = discord.utils.get(m.guild.members, id=391313166958854174)
-            dauermutehenning = False
-            await user_to_mute.edit(mute=False, deafen=False)
-        if m.content == "Tony muten":
-            user_to_mute = discord.utils.get(m.guild.members, id=708227359916163137)  # Tony
-            dauermute = True
-            while dauermute:
-                await user_to_mute.edit(mute=True, deafen=True)
-                time.sleep(1)
-        if m.content == "Tony entmuten":
-            user_to_mute = discord.utils.get(m.guild.members, id=708227359916163137)  # Tony
-            dauermute = False
-            await user_to_mute.edit(mute=False, deafen=False)
+
+    # Wizzard reagieren
+    if re.search("wiz?zard", m.content, re.RegexFlag.IGNORECASE):
+        emojis = ["🧙"]
+        for emoji in emojis:
+            await m.add_reaction(emoji)
+
     # Henning reagieren
     if re.search("henning du toller mensch", m.content, re.RegexFlag.IGNORECASE):
         await m.channel.send("Henning hat nen kleinen")

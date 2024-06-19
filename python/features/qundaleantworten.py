@@ -60,4 +60,3 @@ async def ready():
     f.close()
     check_and_create_file()
     get_anzahl()
-    print("Quandaleantworten is ready")
