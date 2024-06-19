@@ -18,13 +18,13 @@ async def message(m: discord.Message):
         im_Kampf.append(mention)
         await m.channel.send(f"Ich kämpfe <@{mention.id}>!")
         await m.channel.send("3...")
-        time.sleep(1)
+        #time.sleep(1)
         await m.channel.send("2...")
-        time.sleep(1)
+        #time.sleep(1)
         await m.channel.send("1...")
-        time.sleep(1)
+        #time.sleep(1)
         await m.channel.send("Kampf beginnt!")
-        time.sleep(1)
+        #time.sleep(1)
         await mention.edit(mute=True, deafen=True)
         channels = [channel for channel in list(m.guild.channels) if
                     channel.type == discord.ChannelType.voice and channel.id != m.channel.id]

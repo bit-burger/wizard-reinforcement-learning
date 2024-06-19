@@ -7,55 +7,16 @@ from config import client
 
 previous_audit_logs = []
 
-
-# process = subprocess.Popen(
-#             [r"C:\Users\lenna\OneDrive - Students RWTH Aachen University\coden\C\Wizzard\cmake-build-debug\C.exe"],
-#             stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
-
-
-class MyView(discord.ui.View):
-    def __init__(self, channel):
-        super().__init__()  # Aufruf des Konstruktors der Elternklasse
-        self.channel = channel  # Speichern des Parameters in einer Instanzvariablen
-
-    @discord.ui.select(
-        placeholder="",
-        min_values=1,
-        max_values=1,
-        options=[
-            discord.SelectOption(label="1", description=""),
-            discord.SelectOption(label="2", description=""),
-            discord.SelectOption(label="3", description="")
-        ]
-    )
-    async def select_callback(self, select, interaction):
-        await self.channel.send(interaction.values[0])
-        handlewizzard(interaction.values[0])
-
-
-def handlewizzard(eingabe):
-    # Simulate the inputs for the C program
-    # print(eingabe, file=process.stdin)
-    # output = process.stdout.readline()
-    # print(output)
-    ...
-
-
-def closewizzard():
-    # process.stdin.close()
-    # process.stdout.close()
-    # process.wait()
-    ...
-
+dauermute = False
+dauermutehenning = False
 
 @client.event
 async def message(m: discord.Message):
     global dauermute
+    global dauermutehenning
     # nicht auf sich selbst reagieren
     if m.author.id == client.user.id:
         return
-    if message.author.id == 1087435325099483166:
-        await message.delete()
 
     # Wizzard reagieren
     if re.search("wiz?zard", m.content, re.RegexFlag.IGNORECASE):
@@ -66,17 +27,6 @@ async def message(m: discord.Message):
     # Henning reagieren
     if re.search("henning du toller mensch", m.content, re.RegexFlag.IGNORECASE):
         await m.channel.send("Henning hat nen kleinen")
-
-    if m.content == "!start_wizard":
-        # process = subprocess.Popen(
-        # [r"C:\Users\lenna\OneDrive - Students RWTH Aachen University\coden\C\Wizzard\cmake-build-debug\C.exe"],
-        # stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
-
-        # Simulate the inputs for the C program
-        # print("", file=process.stdin)
-        # output = process.stdout.readline()
-        # await m.channel.send(f"Output: {output}")
-        await m.channel.send("", view=MyView(m.channel))
 
 
 @client.event
@@ -92,8 +42,8 @@ async def message_edit(before: discord.Message, after: discord.Message):
 
 @client.event
 async def voice_state_update(member: discord.Member, before, after):
-    #if member.bot:
-        #return
+    if member.bot:
+        return
     if after.deaf is True or after.mute is True:
         print(f"{member} has been deafend or muted.")
         await member.edit(mute=False, deafen=False)
