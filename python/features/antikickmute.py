@@ -1,9 +1,9 @@
-import discord
 import re
-import time
-from hilfen.entries import find_changed_entry
+
+import discord
 
 from config import client
+from hilfen.entries import find_changed_entry
 
 previous_audit_logs = []
 
