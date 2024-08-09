@@ -1,4 +1,6 @@
 import pathlib
+import platform
+import subprocess
 from time import time
 from datetime import datetime
 import socket
@@ -8,6 +10,32 @@ import importlib
 
 import discord
 import config
+
+
+def get_git_info():
+    try:
+        # Get the last commit SHA and the first 20 characters of the commit message
+        commit_info = subprocess.check_output(
+            ["git", "log", "-1", "--pretty=format:%h %s"],
+            universal_newlines=True
+        )
+
+        commit_sha = commit_info.split()[0]
+        commit_message = " ".join(commit_info.split()[1:])
+        if len(commit_message) > 30:
+            commit_message = commit_message[:26] + "..."
+
+        branch = subprocess.check_output(
+            ["git", "branch", "--show-current"],
+            universal_newlines=True
+        ).strip()
+
+        version_info = f"`\"{commit_message}\" ('{branch}', {commit_sha})`"
+
+        return version_info
+
+    except subprocess.CalledProcessError:
+        return "`not available`"
 
 module_str = ""
 status_str = ""
@@ -52,7 +80,7 @@ async def ready():
         has_connected = True
 
         embed = discord.Embed(title="Restarted bot",
-                              description=f"**  From machine**: `{socket.gethostname()}`\n\n**From directory**: `{pathlib.Path().resolve()}`\n\n**Modules loaded**:",
+                              description=f"**  Machine**: `{socket.gethostname()}`\n\n**Directory**: `{pathlib.Path().resolve()}`\n\n**Python version**: `{platform.python_version()}`\n\n**Version control**: {get_git_info()}\n\n**Modules loaded**:",
                               colour=0x00b0f4,
                               timestamp=datetime.now())
 
@@ -63,7 +91,7 @@ async def ready():
         if module_error_str != "":
             embed.add_field(name="module errors:", value=module_error_str, inline=False)
 
-        embed.set_author(name=config.client.user.name, icon_url=config.client.user.display_avatar.url)
+        embed.set_author(name=config.client.user.name + "#" + config.client.user.discriminator, icon_url=config.client.user.display_avatar.url)
         embed.set_footer(text=config.client.user.name)
 
         commands_str = ""
