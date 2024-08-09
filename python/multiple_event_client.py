@@ -16,5 +16,5 @@ class MultipleEventClient(discord.Client):
 
     def dispatch(self, event: str, /, *args: Any, **kwargs: Any) -> None:
         ev = "on_" + event
-        for method in self.extra_events.get(event, []):
+        for method in self.extra_events.get(event, []) + self.extra_events.get(ev, []):
             self._schedule_event(method, ev, *args, **kwargs)  # type: ignore
