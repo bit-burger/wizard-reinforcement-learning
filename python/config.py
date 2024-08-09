@@ -1,3 +1,9 @@
+import pathlib
+import socket
+from datetime import datetime
+from peewee import *
+
+
 import discord
 import json
 
@@ -8,6 +14,9 @@ from multiple_event_client import MultipleEventClient
 
 config = json.load(open("../config.json"))
 token = config["token"]
+
+db = SqliteDatabase('main.db')
+db.connect()
 
 
 intents = discord.Intents.default()
