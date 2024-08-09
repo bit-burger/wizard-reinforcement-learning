@@ -39,7 +39,7 @@ YOUR_GUILD_ID = 1205582028905648209
 # Load tags from database
 def load_tags():
     tags = {}
-    for user_tag in UserTag.select().order_by(UserTag.tag):
+    for user_tag in UserTag.select():
         user_id = str(user_tag.user.id)
         tag_name = user_tag.tag.name
         if user_id not in tags:
@@ -54,7 +54,13 @@ def save_tags(user_id, user_name, tag_name):
     if not created and user.name != user_name:
         user.name = user_name
         user.save()
-    tag, created = Tag.get_or_create(name=tag_name)
+
+    tag_name_lower = tag_name.lower()
+    tag, created = Tag.get_or_create(name=tag_name_lower, defaults={'name': tag_name})
+    if not created:
+        tag.name = tag_name  # Update to original case if it already exists
+        tag.save()
+
     user_tag, created = UserTag.get_or_create(user=user, tag=tag)
     if not created:
         user_tag.counter += 1
@@ -65,7 +71,8 @@ def save_tags(user_id, user_name, tag_name):
 def delete_tags(user_id, tag_name):
     try:
         user = User.get(User.id == user_id)
-        tag = Tag.get(Tag.name == tag_name)
+        tag_name_lower = tag_name.lower()
+        tag = Tag.get(Tag.name == tag_name_lower)
         user_tag = UserTag.get(UserTag.user == user, UserTag.tag == tag)
         if user_tag.counter > 1:
             user_tag.counter -= 1
@@ -118,44 +125,44 @@ async def update_tags_message():
 
 
 @client.event
-async def on_ready():
+async def ready():
     await update_tags_message()
 
 
-@tree.command(name="assign_tag", description="Create or assign a tag to a user", guild=discord.Object(id=YOUR_GUILD_ID))
-async def manage_tag(interaction: discord.Interaction, member: discord.Member, tag_name: str):
+@tree.command(name="role", description="Create or assign a tag to a user", guild=discord.Object(id=YOUR_GUILD_ID))
+async def role(interaction: discord.Interaction, member: discord.Member, tag_name: str):
     save_tags(member.id, member.name, tag_name)
     await update_tags_message()
     try:
-        await interaction.response.send_message(f"Tag `{tag_name}` assigned to `{member.name}`")
+        await interaction.response.send_message(f"Tag `{tag_name}` assigned to `{member.display_name}`")
     except discord.errors.NotFound:
-        await interaction.followup.send(f"Tag `{tag_name}` assigned to `{member.name}`")
+        await interaction.followup.send(f"Tag `{tag_name}` assigned to `{member.display_name}`")
 
 
-@tree.command(name="delete_tag", description="Remove a tag from a user", guild=discord.Object(id=YOUR_GUILD_ID))
-async def delete_tag(interaction: discord.Interaction, member: discord.Member, tag_name: str):
+@tree.command(name="remove_role", description="Remove a tag from a user", guild=discord.Object(id=YOUR_GUILD_ID))
+async def remove_role(interaction: discord.Interaction, member: discord.Member, tag_name: str):
     delete_tags(member.id, tag_name)
     await update_tags_message()
     try:
-        await interaction.response.send_message(f"Tag `{tag_name}` removed from `{member.name}`")
+        await interaction.response.send_message(f"Tag `{tag_name}` removed from `{member.display_name}`")
     except discord.errors.NotFound:
-        await interaction.followup.send(f"Tag `{tag_name}` removed from `{member.name}`")
+        await interaction.followup.send(f"Tag `{tag_name}` removed from `{member.display_name}`")
 
 
-@tree.command(name="ping_tag", description="Ping all users with a specific tag", guild=discord.Object(id=YOUR_GUILD_ID))
-async def ping_tag(interaction: discord.Interaction, tag_name: str):
+@tree.command(name="ping_role", description="Ping all users with a specific tag", guild=discord.Object(id=YOUR_GUILD_ID))
+async def ping_role(interaction: discord.Interaction, tag_name: str):
     tags = load_tags()
     mentions = []
     for user_id, roles in tags.items():
         for role in roles:
-            if role['name'] == tag_name:
+            if role['name'].lower() == tag_name.lower():
                 member = interaction.guild.get_member(int(user_id))
                 if member:
                     mentions.append(member.mention)
     await interaction.response.send_message(f"`{tag_name}`: {' '.join(mentions)}")
 
 
-@tree.command(name="list_tags", description="List all users with their tags", guild=discord.Object(id=YOUR_GUILD_ID))
-async def list_tags(interaction: discord.Interaction):
+@tree.command(name="update_list", description="List all users with their tags", guild=discord.Object(id=YOUR_GUILD_ID))
+async def update_list(interaction: discord.Interaction):
     await update_tags_message()
     await interaction.response.send_message("Tags list updated in the 'Rollen' channel.")
