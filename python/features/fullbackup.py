@@ -213,7 +213,7 @@ async def sync_backup(interaction: discord.Interaction):
         interaction.response("This command can only be used by the bot owner.")
         return
     global isSyncing
-    isSyncing = True
+    #isSyncing = True
     if interaction.guild_id != BACKUP_SERVER_ID:
         interaction.response("This command can only be used in the backup server.")
         return
