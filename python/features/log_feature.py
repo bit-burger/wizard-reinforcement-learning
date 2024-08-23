@@ -11,7 +11,7 @@ async def message(m: discord.Message):
     embed = discord.Embed(title="Member sent a message",
                           description="```\n" + m.content + "\n```" if m.content != "" else None,
                           timestamp=datetime.now())
-    embed.set_author(icon_url=m.author._user.display_avatar.url, name=m.author.name)
+    embed.set_author(icon_url=m.author.display_avatar.url, name=m.author.name)
     embed.set_footer(text=f"user id: {m.author.id}, channel id: {m.channel.id}")
     guild: discord.Guild = client.get_guild(1205582028905648209)
     channel = guild.get_channel(1271237576006701240)
