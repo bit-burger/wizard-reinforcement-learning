@@ -4,13 +4,13 @@ from discord import Guild
 
 from config import client
 
-emojis = ["🐱", "😺", "😽", "😼", "😹"]
+emojis = ["🐱", "😺", "😽", "😼", "😹", "🐨", "🐸", "🐣", "🤪"]
 
 emoji_index = 0
 guild: Guild = None
 
 
-def current_name(): return "Quandale Dingle " + emojis[emoji_index % 5]
+def current_name(): return "Quandale Dingle " + emojis[emoji_index % len(emojis)]
 
 
 @client.event
@@ -21,7 +21,7 @@ async def ready():
     while 1:
         emoji_index += 1
         await change_to_current()
-        await asyncio.sleep(1)
+        await asyncio.sleep(60*5)
 
 
 @client.event
