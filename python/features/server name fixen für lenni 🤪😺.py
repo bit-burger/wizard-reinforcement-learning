@@ -21,7 +21,7 @@ async def ready():
     while 1:
         emoji_index += 1
         await change_to_current()
-        await asyncio.sleep(60*5)
+        await asyncio.sleep(60*60)
 
 
 @client.event
