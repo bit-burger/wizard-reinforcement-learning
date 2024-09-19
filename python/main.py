@@ -97,6 +97,8 @@ async def ready():
         commands_str = ""
         try:
             config.commands = await config.tree.sync(guild=guild)
+            #quandale dingle backup
+            await config.tree.sync(guild=config.client.get_guild(1272931546919338047))
             for command in config.commands:
                 commands_str += f"`{command.name}`\n"
                 print(f"commands '{command.name}' loaded successfully")

@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import discord
 from discord.ext import commands
 import asyncio
@@ -23,7 +25,7 @@ async def ready():
 
 @client.event
 async def message(message):
-    if (isSyncing):
+    if isSyncing:
         return
     if message.guild.id == ACTIVE_SERVER_ID:
         await mirror_message(message)
@@ -31,7 +33,7 @@ async def message(message):
 
 @client.event
 async def message_edit(before, after):
-    if (isSyncing):
+    if isSyncing:
         return
     if before.guild.id == ACTIVE_SERVER_ID:
         await mirror_edited_message(before, after)
@@ -39,7 +41,7 @@ async def message_edit(before, after):
 
 @client.event
 async def message_delete(message):
-    if (isSyncing):
+    if isSyncing:
         return
     if message.guild.id == ACTIVE_SERVER_ID:
         await mark_deleted_message(message)
@@ -82,7 +84,7 @@ async def mirror_message(message):
     if backup_channel:
         if message.embeds:
             # Create a new message stating who wrote it and when
-            author_info = f"**{message.author.name}**      {message.created_at.strftime('%S-%M-%H %d:%m:%Y')}:"
+            author_info = f"**{message.author.name}**      {message.created_at.strftime('%H:%M:%S    %d.%m.%Y')}:"
             await backup_channel.send(content=author_info)
 
             # Forward the original embed
@@ -162,7 +164,7 @@ async def mirror_channel_update(before, after):
     backup_channel = get_or_create_backup_channel(backup_guild, before)
 
     if backup_channel:
-        await backup_channel.edit(name=after.name)
+        backup_channel.edit(name=after.name)
         if before.category != after.category:
             backup_category = get_or_create_backup_category(backup_guild, after.category)
             await backup_channel.edit(category=backup_category)
@@ -210,13 +212,17 @@ async def create_backup_channel(backup_guild, channel):
               guild=discord.Object(id=BACKUP_SERVER_ID))
 async def sync_backup(interaction: discord.Interaction):
     if interaction.user.id != 444417560100864020:
-        interaction.response("This command can only be used by the bot owner.")
+        #interaction.response("This command can only be used by the bot owner.")
         return
-    global isSyncing
-    #isSyncing = True
+
     if interaction.guild_id != BACKUP_SERVER_ID:
-        interaction.response("This command can only be used in the backup server.")
+        #interaction.response("This command can only be used in the backup server.")
         return
+
+    #interaction.response("Starting full backup sync process...")
+
+    global isSyncing
+    isSyncing = True
 
     # Clear backup server
     for channel in backup_guild.channels:
@@ -224,49 +230,90 @@ async def sync_backup(interaction: discord.Interaction):
     for category in backup_guild.categories:
         await category.delete()
 
-    # Get active server
-    # Recreate categories and channels
+    backed_up_channels = set()
+    pending_messages = defaultdict(list)
+
+    # Start the message listener
+    listener_task = asyncio.create_task(listen_for_new_messages(backed_up_channels, pending_messages))
+
+    # Backup categories, channels, and messages
     for category in active_guild.categories:
         backup_category = await backup_guild.create_category(category.name)
-        for channel in category.channels:
-            if isinstance(channel, discord.TextChannel):
-                await backup_guild.create_text_channel(channel.name, category=backup_category)
 
-    # Copy all messages
+        for channel in active_guild.text_channels:
+            if channel.id == 1276910740560674826:
+                continue
+            if channel.category == category:
+                backup_channel = await backup_guild.create_text_channel(channel.name, category=backup_category)
+                await backup_channel_messages(channel, backup_channel, pending_messages)
+                backed_up_channels.add(channel.id)
+
+    # Backup channels not in any category
     for channel in active_guild.text_channels:
-        backup_channel = discord.utils.get(backup_guild.channels, name=channel.name)
+        if channel.category is None:
+            backup_channel = await backup_guild.create_text_channel(channel.name)
+            await backup_channel_messages(channel, backup_channel, pending_messages)
+            backed_up_channels.add(channel.id)
 
-        try:
-            async for message in channel.history(limit=None, oldest_first=True):
-                try:
-                    if message.embeds:
-                        # Create a new message stating who wrote it and when
-                        author_info = f"**{message.author.name}**      {message.created_at.strftime('%S-%M-%H %d:%m:%Y')}:"
-                        await backup_channel.send(content=author_info)
+    # Stop the message listener
+    listener_task.cancel()
 
-                        # Forward the original embed
-                        for embed in message.embeds:
-                            await backup_channel.send(embed=embed)
-                    else:
-                        # Create embed
-                        embed = discord.Embed(
-                            description=message.content,
-                            color=discord.Color.blue(),
-                            timestamp=message.created_at
-                        )
-                        embed.set_author(name=message.author.name,
-                                         icon_url=message.author.avatar.url if message.author.avatar else None)
-                        embed.set_footer(text="")
-                        # Add attachment info if any
-                        if message.attachments:
-                            attachment_info = "\n".join(
-                                [f"[{attachment.filename}]({attachment.url})" for attachment in message.attachments])
-                            embed.add_field(name="Attachments", value=attachment_info, inline=False)
-                        await backup_channel.send(embed=embed)
-                    await asyncio.sleep(0.6)
-                except Exception as e:
-                    print(f"Error backing up message in {channel.name}: {e}")
-
-        except Exception as e:
-            print(f"Error backing up channel {channel.name}: {e}")
     isSyncing = False
+
+
+async def listen_for_new_messages(backed_up_channels, pending_messages):
+    def check(message):
+        return message.guild.id == ACTIVE_SERVER_ID
+
+    while True:
+        try:
+            message = await client.wait_for('message', check=check)
+            if message.channel.id in backed_up_channels:
+                backup_channel = discord.utils.get(backup_guild.channels, name=message.channel.name)
+                await backup_message(message, backup_channel)
+            else:
+                pending_messages[message.channel.id].append(message)
+        except asyncio.CancelledError:
+            break
+
+
+async def backup_channel_messages(channel, backup_channel, pending_messages):
+    try:
+        async for message in channel.history(limit=None, oldest_first=True):
+            await backup_message(message, backup_channel)
+            await asyncio.sleep(0.6)
+
+        # Backup any pending messages for this channel
+        for pending_message in pending_messages[channel.id]:
+            await backup_message(pending_message, backup_channel)
+        pending_messages[channel.id].clear()
+
+    except Exception as e:
+        print(f"Error backing up channel {channel.name}: {e}")
+
+
+async def backup_message(message, backup_channel):
+    if message.embeds:
+        # Create a new message stating who wrote it and when
+        author_info = f"**{message.author.name}**      {message.created_at.strftime('%H:%M %d.%m.%Y')}:"
+        await backup_channel.send(content=author_info)
+
+        # Forward the original embed
+        for embed in message.embeds:
+            await backup_channel.send(embed=embed)
+    else:
+        # Create embed
+        embed = discord.Embed(
+            description=message.content,
+            color=discord.Color.blue(),
+            timestamp=message.created_at
+        )
+        embed.set_author(name=message.author.name,
+                         icon_url=message.author.avatar.url if message.author.avatar else None)
+        embed.set_footer(text="")
+        # Add attachment info if any
+        if message.attachments:
+            attachment_info = "\n".join(
+                [f"[{attachment.filename}]({attachment.url})" for attachment in message.attachments])
+            embed.add_field(name="Attachments", value=attachment_info, inline=False)
+        await backup_channel.send(embed=embed)
