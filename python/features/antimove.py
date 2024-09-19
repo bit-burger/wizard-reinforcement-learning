@@ -12,6 +12,7 @@ async def voice_state_update(member: discord.Member, before, after):
         return
     # Prüfen, ob das Mitglied gemoved wurde
     if before.channel is not None and after.channel is not None and before.channel != after.channel:
+        if before.channel.id == member.guild.afk_channel.id: return
         await check_audit_logs_efficient(member.guild, before, member)
 
 
