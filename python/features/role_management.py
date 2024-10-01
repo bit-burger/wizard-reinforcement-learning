@@ -133,15 +133,15 @@ async def show_tags(interaction: discord.Interaction):
     pass
 
 # geht die Datenbank und Discord durch und schaut wo die Rolle ist
-def role_walk(role: Role):
+def role_walk(usr_role: Role):
     pass
 
 # Fügt eine Rolle in Discord hinzu
-def swap_role_in(guild: discord.Guild, role: Role):
+def swap_role_in(guild: discord.Guild, db_role: Role):
     pass
 
 # Entfernt eine Rolle aus Discord und fügt sie in die Datenbank hinzu
-def swap_role_out(guild: discord.Guild, role: Role):
+def swap_role_out(guild: discord.Guild, ds_role: Role):
     pass
 
 # TODO: prüfe ob eine rolle for swap_out 'dirty' ist,
