@@ -46,7 +46,7 @@ async def message(m: discord.Message):
         word_object.save()
 
 
-@tree.command(name="wc all", description="lists all counted words",
+@tree.command(name="wc_all", description="lists all counted words",
               guild=discord.Object(1205582028905648209))
 async def wcf(interaction: discord.Interaction, user: discord.Member = None, word: str = None, offset: int = 0):
     await wc_base(interaction, user, word, 1000000, offset)

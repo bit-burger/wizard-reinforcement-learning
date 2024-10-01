@@ -19,6 +19,7 @@ conn = sqlite3.connect('tags.db')
 c = conn.cursor()
 
 # Tags-Tabelle erstellen
+# TODO: relation between members and tags is missing
 c.execute('''CREATE TABLE IF NOT EXISTS tags
              (name TEXT PRIMARY KEY, color TEXT, members TEXT, last_used TIMESTAMP)''')
 
@@ -31,6 +32,7 @@ def update_last_used(role_name):
 
 
 # Funktion: Page Walk - Rolle in der SQLite-Datenbank suchen
+# TODO: create Rolle Object from the fetched data
 def page_walk(role_name):
     c.execute("SELECT * FROM tags WHERE name=?", (role_name,))
     tag = c.fetchone()
@@ -43,9 +45,8 @@ def page_walk(role_name):
 
 
 # Funktion: Page Fault - Wenn Rolle nicht gefunden wird
-async def page_fault(ctx, role_name):
-    await ctx.send(f"Rolle oder Tag `{role_name}` existiert nicht.")
-
+async def page_fault(ctx, rolle:Rolle):
+        await ctx.send(f"Rolle oder Tag `{rolle.name}` existiert nicht.")
 
 # Funktion: Swap Page In - Tag aus der DB zu einer Rolle machen
 async def swap_page_in(guild, saved_role: Rolle):
@@ -69,27 +70,30 @@ async def swap_page_out(guild, discord_role):
 
 
 # Funktion: Rolle hinzufügen
-async def add_role(ctx, role_name, color="0xFFFFFF"):
+async def add_role(ctx:discord.Interaction, role_name, color="0xFFFFFF"):
+    rolle:Rolle = Rolle(name=role_name, color=color, members=[])
     guild = ctx.guild
-    discord_role = discord.utils.get(guild.roles, name=role_name)
+    discord_role = discord.utils.get(guild.roles, name=rolle.name)
 
     if discord_role:
-        await ctx.send(f"Rolle `{role_name}` existiert bereits.")
-        update_last_used(role_name)  # Zeitstempel aktualisieren
+        await ctx.response.send_message(f"Rolle `{rolle.name}` existiert bereits.")
+        update_last_used(rolle.name)  # Zeitstempel aktualisieren
     else:
         # Page Walk: Suche in der DB
-        saved_role = page_walk(role_name)
+        saved_role = page_walk(rolle.name)
         if saved_role:
             # Wenn Tag gefunden, dann Swap Page In
             await swap_page_in(guild, saved_role)
-            await ctx.send(f"Tag `{role_name}` wurde in eine Rolle umgewandelt.")
+            await ctx.response.send_message(f"Tag `{rolle.name}` wurde in eine Rolle umgewandelt.")
         else:
             # Page Fault: Weder Rolle noch Tag gefunden
-            await page_fault(ctx, role_name)
+            #TODO failing if not enough space
+            await swap_page_out(guild, await find_least_recently_used_role(guild))
+            await swap_page_in(guild, rolle)
 
 
 # Aging-Algorithmus zum Wählen der Rolle, die am längsten nicht verwendet wurde
-def find_least_recently_used_role(guild):
+async def find_least_recently_used_role(guild):
     # Hole alle Rollen aus der DB, die Zeitstempel enthalten
     c.execute("SELECT name FROM tags ORDER BY last_used LIMIT 1")
     result = c.fetchone()
@@ -97,24 +101,24 @@ def find_least_recently_used_role(guild):
     if result:
         # Die am längsten nicht verwendete Rolle finden
         role_name = result[0]
-        discord_role = discord.utils.get(guild.roles, name=role_name)
+        discord_role = await discord.utils.get(guild.roles, name=role_name)
         if discord_role:
             return discord_role
     return None
 
 
 # /role Befehl
-@client.command()
-async def role(ctx, role_name, color="0xFFFFFF"):
+@tree.command(name="role", description="list roles", guild=discord.Object(1205582028905648209))
+async def role(ctx:discord.Interaction, role_name:str, color:str="0xFFFFFF"):
     guild = ctx.guild
 
     if len(guild.roles) >= 250:  # Wenn das Limit erreicht ist
         oldest_role = await find_least_recently_used_role(guild)
         if oldest_role:
             await swap_page_out(guild, oldest_role)  # Swap Page Out
-            await ctx.send(f"Rolle `{oldest_role.name}` wurde in einen Tag umgewandelt.")
+            await ctx.response.send_message(f"Rolle `{oldest_role.name}` wurde in einen Tag umgewandelt.")
         else:
-            await ctx.send(f"Es gibt keine alte Rolle zum Auslagern.")
+            await ctx.response.send_message(f"Rolle `{role_name}` konnte nicht hinzugefügt werden.")
 
     await add_role(ctx, role_name, color)
 
@@ -139,13 +143,11 @@ async def on_message(message):
                 await message.channel.send(f"Tag `{role_name}` wurde in eine Rolle umgewandelt.")
             else:
                 # Page Fault: Rolle oder Tag existiert nicht
-                await page_fault(message.channel, role_name)
-
-    await client.process_commands(message)
+                await page_fault(message.channel, rolle=Rolle(name=role_name, color="0xFFFFFF", members=[]))
 
 
 # Slash-Befehl zum Anzeigen aller Tags mit Mitgliedern
-@tree.command(name="show_tags", description="Zeige alle gespeicherten Tags und Mitglieder")
+@tree.command(name="show_tags", description="Zeige alle gespeicherten Tags und Mitglieder", guild=discord.Object(1205582028905648209))
 async def show_tags(interaction: discord.Interaction):
     # Alle Tags mit Mitgliedern aus der DB abrufen
     c.execute("SELECT name, members FROM tags")

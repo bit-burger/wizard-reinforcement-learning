@@ -17,7 +17,12 @@ def has_ole(m: discord.Message):
 @client.event
 async def message(m: discord.Message):
     if m.id == client.user.id: return
+    if m.author.bot: return
     if has_ole(m):
         await m.add_reaction("😄")
     if re.search("mi*a*o+a*w+|mi+a*o*a*w+", m.content, re.IGNORECASE):
         await m.add_reaction("😽")
+    if re.search("maschinenbau|(^|\\s)maschi($|\\s)", m.content, re.IGNORECASE):
+        await m.reply(content="Karohemd und Samenstau - ich studier Maschinenbau.")
+    if re.search("elektrotechnik|(^|\\s)eti($|\\s)", m.content, re.IGNORECASE):
+        await m.reply(content="Haare lang, Arme schmächtig - ich studier Elektrotechnik.")
