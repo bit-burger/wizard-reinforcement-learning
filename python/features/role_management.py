@@ -22,11 +22,12 @@ db.delete_role('Admin')
 db.close()
 
 @tree.command(name="role", description="creates a role", guild=discord.Object(1205582028905648209))
-async def role(ctx: discord.Interaction, role_name: str, color: str = "0xFFFFFF"):
-    pass
+async def role(interaction:discord.Interaction, role_name:str, color:str='#F4F4F4', members=None):
+    if members is None:
+        members = []
 
 @tree.command(name="show_tags", description="lists all tags", guild=discord.Object(1205582028905648209))
-async def show_tags(interaction: discord.Interaction):
+async def show_tags(interaction:discord.Interaction, limit:int=0):
     pass
 
 @client.event
