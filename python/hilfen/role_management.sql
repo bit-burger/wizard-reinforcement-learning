@@ -1,38 +1,49 @@
+drop table if exists tags;
+drop table if exists tag_members;
+drop table if exists roles;
+drop table if exists role_members;
+
+-- Tags: Rollen die nicht in Discord, sondern nur in der Datenbank sind
 CREATE TABLE IF NOT EXISTS tags
 (
-    name      TEXT PRIMARY KEY,
-    color     TEXT,
-    last_used TIMESTAMP
+    name  TEXT PRIMARY KEY,
+    color TEXT
 );
 
-CREATE TABLE IF NOT EXISTS members
+-- Members: 'n zu m'-Beziehung zwischen Usern und Tags
+CREATE TABLE IF NOT EXISTS tag_members
 (
-    member_name TEXT,
-    tag_name    TEXT REFERENCES tags (name) ON DELETE CASCADE,
-    PRIMARY KEY (member_name, tag_name)
+    dc_userid INT,
+    tag_name  TEXT REFERENCES tags (name) ON DELETE CASCADE,
+    PRIMARY KEY (dc_userid, tag_name)
 );
 
-INSERT OR IGNORE INTO tags (name, color, last_used)
-VALUES ('red', '#ff0000', '2019-01-01');
-INSERT OR IGNORE INTO tags (name, color, last_used)
-VALUES ('green', '#00ff00', '2019-01-01');
-INSERT OR IGNORE INTO tags (name, color, last_used)
-VALUES ('blue', '#0000ff', '2019-01-01');
+-- Roles: Rollen die in Discord sind und wann sie zuletzt verwendet wurden
+CREATE TABLE IF NOT EXISTS roles
+(
+    name      TEXT PRIMARY KEY,
+    last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
+INSERT OR IGNORE INTO tags (name, color)
+VALUES ('red', '#ff0000');
+INSERT OR IGNORE INTO tags (name, color)
+VALUES ('green', '#00ff00');
+INSERT OR IGNORE INTO tags (name, color)
+VALUES ('blue', '#0000ff');
 
-INSERT OR IGNORE INTO members (member_name, tag_name)
-VALUES ('Alice', 'red');
-INSERT OR IGNORE INTO members (member_name, tag_name)
-VALUES ('Bob', 'red');
-INSERT OR IGNORE INTO members (member_name, tag_name)
-VALUES ('Charlie', 'green');
-INSERT OR IGNORE INTO members (member_name, tag_name)
-VALUES ('David', 'blue');
+INSERT OR IGNORE INTO tag_members (dc_userid, tag_name)
+VALUES (1, 'red');
+INSERT OR IGNORE INTO tag_members (dc_userid, tag_name)
+VALUES (2, 'red');
+INSERT OR IGNORE INTO tag_members (dc_userid, tag_name)
+VALUES (3, 'green');
+INSERT OR IGNORE INTO tag_members (dc_userid, tag_name)
+VALUES (4, 'blue');
 
-SELECT *
-FROM members
-WHERE tag_name = 'red';
-
-UPDATE tags
-SET last_used = '2022-01-01'
-WHERE name = 'red';
+INSERT OR IGNORE INTO roles (name, last_used)
+VALUES ('yellow', '2018-01-01');
+INSERT OR IGNORE INTO roles (name, last_used)
+VALUES ('magenta', '2018-01-01');
+INSERT OR IGNORE INTO roles (name, last_used)
+VALUES ('black', '2018-01-01');
