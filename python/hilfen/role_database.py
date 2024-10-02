@@ -2,7 +2,7 @@ import sqlite3
 from datetime import datetime
 
 class Database:
-    def __init__(self, db_name='database.db'):
+    def __init__(self, db_name='roles.db'):
         self.connection = sqlite3.connect(db_name)
         self.cursor = self.connection.cursor()
         self.initialize_database()
