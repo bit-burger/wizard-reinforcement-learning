@@ -5,7 +5,7 @@ import discord
 from config import client
 
 
-@client.event
+#@client.event
 async def message(m: discord.Message):
     if m.author == client.user: return
     embed = discord.Embed(title="Member sent a message",
