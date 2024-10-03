@@ -175,6 +175,8 @@ async def swap_role_in(role_name: str, color: str = None, members: list[int] = N
 """
 Entfernt eine Rolle aus Discord und speichert sie als Tag in der Datenbank.
 """
+# TODO: do not delete specific roles (including @everyone)
+#  achieve this by only sync roles below a specified permission limit in sync_roles in database.py
 async def swap_role_out(dc_role: discord.Role):
     members = [member.id for member in dc_role.members]
     db.insert_tag(dc_role.name, f'#{dc_role.color.value:06X}', members)
