@@ -39,8 +39,8 @@ Methoden:
 - close(): Schließt die Verbindung zur Datenbank.
 """
 db = Database()
-
-guild = client.get_guild(1205582028905648209)
+guild_id = 1205582028905648209
+guild = client.get_guild(guild_id)
 
 """
 Erstellt eine neue Rolle. 
@@ -55,7 +55,7 @@ Anschließend wird die Rolle allen Mitgliedern hinzugefügt, die den Tag hatten.
 Wenn die Rolle noch nicht existiert wird sie ins Discord gebracht und zum Table 'roles' hinzugefügt.
 Wenn nicht ausreichend Platz ist, wird erst die Rolle mit dem ältesten Timestamp gelöscht und als Tag in die Datenbank geschrieben.
 """
-@tree.command(name="role", description="creates a role", guild=discord.Object(1205582028905648209))
+@tree.command(name="role", description="creates a role", guild=discord.Object(guild_id))
 async def role(interaction: discord.Interaction, role_name: str, color: str = '#F4F4F4', members: list[int] = None):
     dc_role = discord.utils.get(guild.roles, name=role_name)
     if dc_role:
@@ -81,7 +81,7 @@ async def role(interaction: discord.Interaction, role_name: str, color: str = '#
 """
 Gibt eine Liste aller Tags aus und zu jedem Tag tabellarisch (in einer Ascii-Tabelle) die Mitglieder, die den Tag haben.
 """
-@tree.command(name="show_tags", description="lists all tags", guild=discord.Object(1205582028905648209))
+@tree.command(name="show_tags", description="lists all tags", guild=discord.Object(guild_id))
 async def show_tags(interaction: discord.Interaction, limit: int = 0):
     tags = db.get_tags()
     if not tags:
