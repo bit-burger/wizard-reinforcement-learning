@@ -56,6 +56,7 @@ Wenn die Rolle noch nicht existiert wird sie ins Discord gebracht und zum Table 
 Wenn nicht ausreichend Platz ist, wird erst die Rolle mit dem ältesten Timestamp gelöscht und als Tag in die Datenbank geschrieben.
 """
 @tree.command(name="role", description="creates a role", guild=discord.Object(guild_id))
+#TODO: error 'unsupported type annotation list[int]' caused by discord-api
 async def role(interaction: discord.Interaction, role_name: str, color: str = '#F4F4F4', members: list[int] = None):
     dc_role = discord.utils.get(guild.roles, name=role_name)
     if dc_role:
