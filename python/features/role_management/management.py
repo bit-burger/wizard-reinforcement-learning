@@ -6,9 +6,13 @@ Wenn eine Rolle erstellt, oder getaggt wurde und sich nicht im Discord befindet,
 muss Platz für die Rolle geschaffen werden. Dafür wird die Rolle mit dem ältesten Timestamp aus Discord gelöscht
 und als Tag in die Datenbank geschrieben.
 """
+from typing import Optional
+
 from features.role_management.database import Database
 import discord
 from config import client, tree
+from features.role_management.user_selection_view import RoleAssignmentView
+
 
 
 """
@@ -19,28 +23,18 @@ Zu jedem Tag werden die Mitglieder gespeichert, die den Tag haben.
 Zusätzlich werden die Rollen gespeichert, die aktuell auf dem Server existieren.
 Zu diesen Rollen wird ein Timestamp gespeichert, wann sie zuletzt benutzt wurden.
 """
-"""
-Klasse für die Verwaltung von Discord-Rollen und Tags in einer SQLite-Datenbank.
+db:Optional[Database] = None
 
-Attribute:
-- connection: SQLite-Verbindung zur Datenbank.
-- cursor: SQLite-Cursor zum Ausführen von SQL-Befehlen.
+guild:Optional[discord.Guild] = None
+guild_id: int = 1205582028905648209
 
-Methoden:
-- insert_tag(tag_name, color, members): Fügt einen neuen Tag mit einer bestimmten Farbe und einer Liste von Mitgliedern hinzu.
-- delete_tag(tag_name): Löscht einen Tag basierend auf seinem Namen.
-- get_tag(tag_name): Gibt Informationen über einen bestimmten Tag zurück.
-- get_tags(): Gibt eine Liste aller Tags zurück.
-- get_members_by_tag(tag_name): Gibt eine Liste von Mitgliedern (Discord-User-IDs) zurück, die zu einem bestimmten Tag gehören.
-- insert_role(role_name): Fügt eine neue Rolle in die Datenbank ein.
-- delete_role(role_name): Löscht eine Rolle basierend auf ihrem Namen aus der Datenbank.
-- update_role_last_used(role_name): Aktualisiert den Zeitstempel, wann eine Rolle zuletzt verwendet wurde.
-- get_last_used_role(): Gibt die am längsten nicht verwendete Rolle zurück.
-- close(): Schließt die Verbindung zur Datenbank.
-"""
-db = Database()
-guild_id = 1205582028905648209
-guild = client.get_guild(guild_id)
+@client.event
+async def on_ready():
+    global guild
+    global db
+    guild = await client.fetch_guild(guild_id)
+    db = Database(guild)
+
 
 """
 Erstellt eine neue Rolle. 
@@ -56,27 +50,32 @@ Wenn die Rolle noch nicht existiert wird sie ins Discord gebracht und zum Table 
 Wenn nicht ausreichend Platz ist, wird erst die Rolle mit dem ältesten Timestamp gelöscht und als Tag in die Datenbank geschrieben.
 """
 @tree.command(name="role", description="creates a role", guild=discord.Object(guild_id))
-#TODO: error 'unsupported type annotation list[int]' caused by discord-api
-async def role(interaction: discord.Interaction, role_name: str, color: str = '#F4F4F4', members: list[int] = None):
+async def role(interaction: discord.Interaction, role_name: str, color: str = '#F4F4F4'):
     dc_role = discord.utils.get(guild.roles, name=role_name)
     if dc_role:
-        await interaction.response.send_message(f"Role '{role_name}' already exists on Discord.")
+        await interaction.response.send_message(f"Role '{role_name}' already exists on Discord.", ephemeral=True)
         db.update_role_last_used(role_name)
         return
     tag = db.get_tag(role_name)
     if tag:
-        await interaction.response.send_message(f"Role '{role_name}' exists in the database. Bringing it to Discord...")
+        await interaction.response.send_message(f"Role '{role_name}' exists in the database (maybe with different color). "
+                                                f"Bringing it to Discord...", ephemeral=True)
         await ensure_space_for_role()
-        await swap_role_in(role_name)
-        await interaction.response.send_message(f"Role '{role_name}' has been successfully brought to Discord.")
+        await swap_role_in(role_name, color)
+        await interaction.response.send_message(f"Role '{role_name}' has been successfully brought to Discord.", ephemeral=True)
         return
-    if len(guild.roles) >= 250:
-        last_used_role = db.get_last_used_role()
-        dc_last_used_role = await discord.utils.get(guild.roles, name=last_used_role)
-        if dc_last_used_role:
-            await swap_role_out(dc_last_used_role)
-    await swap_role_in(role_name, color, members)
-    await interaction.response.send_message(f"Role '{role_name}' created and assigned to members (if provided).")
+    await ensure_space_for_role()
+    view = RoleAssignmentView(role_name, color)
+    await interaction.response.send_message("Please select users to assign the role or press 'Skip':", view=view, ephemeral=True)
+    await view.wait()
+    selected_users = view.selected_users
+    user_ids = [user.id for user in selected_users] if not view.skipped else []
+    if view.skipped:
+        await interaction.followup.send("No users were selected. Proceeding without user assignments.", ephemeral=True)
+    else:
+        await interaction.followup.send(f"Role '{role_name}' is being assigned to {len(selected_users)} users.", ephemeral=True)
+    await swap_role_in(role_name, color, user_ids)
+    await interaction.followup.send(f"Role '{role_name}' created and assigned to members (if provided).", ephemeral=True)
 
 
 """
@@ -86,7 +85,7 @@ Gibt eine Liste aller Tags aus und zu jedem Tag tabellarisch (in einer Ascii-Tab
 async def show_tags(interaction: discord.Interaction, limit: int = 0):
     tags = db.get_tags()
     if not tags:
-        await interaction.response.send_message("No tags available.")
+        await interaction.response.send_message("No tags available.", ephemeral=True)
         return
     tag_list = []
     for tag in tags:
@@ -95,7 +94,7 @@ async def show_tags(interaction: discord.Interaction, limit: int = 0):
         tag_list.append(f"{tag[0]} (Color: {tag[1]}): {member_list or 'No members'}")
     if limit > 0:
         tag_list = tag_list[:limit]
-    await interaction.response.send_message("\n".join(tag_list))
+    await interaction.response.send_message("\n".join(tag_list), ephemeral=True)
 
 
 """
@@ -178,7 +177,7 @@ Entfernt eine Rolle aus Discord und speichert sie als Tag in der Datenbank.
 """
 async def swap_role_out(dc_role: discord.Role):
     members = [member.id for member in dc_role.members]
-    db.insert_tag(dc_role.name, f'#{dc_role.color:06X}', members)
+    db.insert_tag(dc_role.name, f'#{dc_role.color.value:06X}', members)
     await dc_role.delete()
     db.delete_role(dc_role.name)
     print(f"Role '{dc_role.name}' has been swapped out from Discord to the database.")
@@ -189,9 +188,9 @@ Prüft, ob genügend Platz für eine neue Rolle ist.
 Wenn nicht, wird die Rolle mit dem ältesten Timestamp gelöscht und als Tag in die Datenbank geschrieben.
 """
 async def ensure_space_for_role():
-    if len(guild.roles) >= 250:
+    if len(guild.roles) >= 249:
         last_used_role = db.get_last_used_role()
         if last_used_role:
-            dc_last_used_role = await discord.utils.get(guild.roles, name=last_used_role[0])
+            dc_last_used_role =  discord.utils.get(guild.roles, name=last_used_role[0])
             if dc_last_used_role:
                 await swap_role_out(dc_last_used_role)

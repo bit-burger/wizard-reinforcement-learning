@@ -1,5 +1,7 @@
 import sqlite3
 from datetime import datetime
+import discord
+
 
 """
 Klasse für die Verwaltung von Discord-Rollen und Tags in einer SQLite-Datenbank.
@@ -21,10 +23,11 @@ Methoden:
 - close(): Schließt die Verbindung zur Datenbank.
 """
 class Database:
-    def __init__(self, db_name='roles.db'):
-        self.connection = sqlite3.connect(db_name)
+    def __init__(self, guild: discord.Guild=None):
+        self.connection = sqlite3.connect('roles.db')
         self.cursor = self.connection.cursor()
         self.initialize_database()
+        self.sync_roles(guild)
 
     def initialize_database(self):
         self.cursor.execute('''
@@ -33,7 +36,6 @@ class Database:
                 color TEXT
             )
         ''')
-
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS tag_members (
                 dc_userid INT,
@@ -41,15 +43,24 @@ class Database:
                 PRIMARY KEY (dc_userid, tag_name)
             )
         ''')
-
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS roles (
                 name      TEXT PRIMARY KEY,
                 last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-
         self.connection.commit()
+
+    def sync_roles(self, guild: discord.Guild=None):
+        dc_roles = {role.name: role for role in guild.roles}
+        self.cursor.execute('SELECT name FROM roles')
+        db_roles = [row[0] for row in self.cursor.fetchall()]
+        for role_name in dc_roles:
+            if role_name not in db_roles:
+                self.insert_role(role_name)
+        for role_name in db_roles:
+            if role_name not in dc_roles:
+                self.delete_role(role_name)
 
     def insert_tag(self, tag_name: str, color: str, members: list[int]):
         try:
@@ -68,7 +79,7 @@ class Database:
 
     def get_tag(self, tag_name: str):
         self.cursor.execute('SELECT * FROM tags WHERE name = ?', (tag_name,))
-        return self.cursor.fetchone
+        return self.cursor.fetchone()
 
     def get_tags(self):
         self.cursor.execute('SELECT * FROM tags')
@@ -95,7 +106,7 @@ class Database:
         self.connection.commit()
 
     def get_last_used_role(self):
-        self.cursor.execute('SELECT name FROM roles ORDER BY last_used ASC LIMIT 1')
+        self.cursor.execute('SELECT name FROM roles ORDER BY last_used LIMIT 1')
         return self.cursor.fetchone()
 
     def close(self):
