@@ -23,7 +23,7 @@ Methoden:
 - close(): Schließt die Verbindung zur Datenbank.
 """
 class Database:
-    def __init__(self, guild: discord.Guild=None):
+    def __init__(self, guild: discord.Guild = None):
         self.connection = sqlite3.connect('roles.db')
         self.cursor = self.connection.cursor()
         self.initialize_database()
@@ -51,8 +51,18 @@ class Database:
         ''')
         self.connection.commit()
 
-    def sync_roles(self, guild: discord.Guild=None):
-        dc_roles = {role.name: role for role in guild.roles}
+    def sync_roles(self, guild: discord.Guild = None):
+        top_role_id = 1209166286618361988
+        top_role = discord.utils.get(guild.roles, id=top_role_id)
+        if top_role is None:
+            print(f"Role with ID {top_role_id} not found.")
+            return
+        top_role_index = guild.roles.index(top_role)
+        dc_roles = {
+            role.name: role
+            for role in guild.roles[:top_role_index]
+            if role.name != '@everyone'
+        }
         self.cursor.execute('SELECT name FROM roles')
         db_roles = [row[0] for row in self.cursor.fetchall()]
         for role_name in dc_roles:
