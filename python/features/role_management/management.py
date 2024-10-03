@@ -1,7 +1,7 @@
 """
 
 """
-from features.role_management.role_database import Database
+from features.role_management.database import Database
 import discord
 from config import client, tree
 

@@ -1,4 +1,4 @@
-from features.role_management.role_database import Database
+from features.role_management.database import Database
 
 db = Database()
 
