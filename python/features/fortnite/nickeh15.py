@@ -4,7 +4,7 @@ import random
 
 from config import tree
 
-with open('resources/fortnite_quotes.json', 'r') as f:
+with open('fortnite_quotes.json', 'r') as f:
     quotes = json.load(f)
 
 quote_used = {quote: False for quote in quotes}

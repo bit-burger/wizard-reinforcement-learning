@@ -1,14 +1,15 @@
+import importlib
+import os
 import pathlib
 import platform
-import subprocess
-from time import time
-from datetime import datetime
 import socket
-import os
+import subprocess
+from datetime import datetime
 from os import path
-import importlib
+from time import time
 
 import discord
+
 import config
 
 
@@ -43,30 +44,55 @@ time_to_load_str = ""
 
 module_error_str = ""
 
-for file in sorted(os.listdir(os.fsencode("features"))):
-    filename = os.fsdecode(file)
-    isdir = path.isdir(filename)
-    if isdir:
-        if not path.exists(f"features/{filename}/__init__.py"):
-            continue
-    else:
-        if filename.endswith(".py"):
-            filename = filename[0:-3]
-        else:
+# Lade die Liste der zu ignorierenden Dateien aus der .featureignore Datei
+ignore_list = set()
+ignore_file_path = os.path.join("features", ".featureignore")
+
+if path.exists(ignore_file_path):
+    with open(ignore_file_path, "r") as f:
+        ignore_list = set(line.strip() for line in f if line.strip())  # Entferne Leerzeilen
+
+# Verwende os.walk, um rekursiv durch die Ordnerstruktur zu gehen
+for root, dirs, files in os.walk("features"):
+    for file in files:
+        filename = os.path.join(root, file)
+        isdir = path.isdir(filename)
+
+        # Überspringe Dateien, die in der .featureignore-Datei gelistet sind
+        if file in ignore_list:
             continue
 
-    module_str += f"`{filename}`" + "\n"
-    begin_time = time()
-    try:
-        importlib.import_module(f"features.{filename}")
-        status_str += "`loaded successfully`" + "\n"
-        print(f"module '{filename}' loaded successfully")
-    except BaseException as e:
-        status_str += f"`loaded unsuccessful`" + "\n"
-        module_error_str += f"`{filename}`: `{e}`" + "\n\n"
-        print(f"module '{filename}' could not be loaded, error: {e}")
-    finally:
-        time_to_load_str += f"`{(time() - begin_time) * 1000:.3f}msec`\n"
+        # Überspringe Dateien, die '.helper.py' enthalten
+        if file.endswith(".helper.py"):
+            continue
+
+        # Überprüfe, ob es sich um eine Datei handelt und ob __init__.py im Verzeichnis vorhanden ist
+        if isdir:
+            if not path.exists(os.path.join(filename, "__init__.py")):
+                continue
+        else:
+            if filename.endswith(".py"):
+                filename = filename[:-3]  # Entferne die ".py"-Endung
+            else:
+                continue
+
+        # Konvertiere den Dateipfad in ein Modulimportformat
+        module_path = os.path.relpath(filename, "features").replace(os.sep, ".")
+
+        module_str += f"`{module_path}`" + "\n"
+        begin_time = time()
+
+        try:
+            # Modul dynamisch importieren
+            importlib.import_module(f"features.{module_path}")
+            status_str += "`loaded successfully`" + "\n"
+            print(f"module '{module_path}' loaded successfully")
+        except BaseException as e:
+            status_str += "`loaded unsuccessful`" + "\n"
+            module_error_str += f"`{module_path}`: `{e}`" + "\n\n"
+            print(f"module '{module_path}' could not be loaded, error: {e}")
+        finally:
+            time_to_load_str += f"`{(time() - begin_time) * 1000:.3f}msec`\n"
 
 has_connected = False
 

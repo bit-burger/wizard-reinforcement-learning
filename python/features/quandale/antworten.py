@@ -1,6 +1,5 @@
 import re
 import os
-
 from config import client
 import discord
 import random
@@ -8,6 +7,8 @@ import random
 antworten = []
 stelle = 0
 
+# Get the absolute path to the current file's directory
+current_directory = os.path.dirname(os.path.abspath(__file__))
 
 @client.event
 async def message(nachricht):
@@ -30,7 +31,7 @@ async def message(nachricht):
 
 
 def update_anzahl():
-    with open(r'../stellequandaleantworten.txt', 'w', encoding='utf-8') as f:
+    with open(os.path.join(current_directory, 'stellequandaleantworten.txt'), 'w', encoding='utf-8') as f:
         global stelle
         f.flush()
         f.write(str(stelle))
@@ -38,15 +39,15 @@ def update_anzahl():
 
 
 def get_anzahl():
-    with open(r'../stellequandaleantworten.txt', 'r', encoding='utf-8') as f:
+    with open(os.path.join(current_directory, 'stellequandaleantworten.txt'), 'r', encoding='utf-8') as f:
         global stelle
         stelle = int(f.read().strip())
         f.close()
 
 
 def check_and_create_file():
-    if not os.path.isfile('../stellequandaleantworten.txt'):
-        with open('../stellequandaleantworten.txt', 'w', encoding='utf-8') as f:
+    if not os.path.isfile(os.path.join(current_directory, 'stellequandaleantworten.txt')):
+        with open(os.path.join(current_directory, 'stellequandaleantworten.txt'), 'w', encoding='utf-8') as f:
             f.write('0')
             f.close()
 
@@ -55,7 +56,8 @@ def check_and_create_file():
 async def ready():
     global stelle
     global antworten
-    with open(r'resources/quandale.txt', 'r', encoding='utf-8') as f:
+    # Use the absolute path to 'quandale.txt'
+    with open(os.path.join(current_directory, 'quandale.txt'), 'r', encoding='utf-8') as f:
         antworten = f.read().split('///')
     f.close()
     check_and_create_file()

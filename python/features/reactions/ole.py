@@ -17,5 +17,6 @@ def has_ole(m: discord.Message):
 @client.event
 async def message(m: discord.Message):
     if m.id == client.user.id: return
+    if m.author.bot: return
     if has_ole(m):
         await m.add_reaction("😄")

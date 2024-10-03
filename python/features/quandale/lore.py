@@ -3,10 +3,10 @@ import json
 
 from config import tree
 
-with open('resources/quandale_lore.json', 'r') as f:
+with open('quandale_lore.json', 'r') as f:
     lore_data = json.load(f)
 
-with open('resources/quandale_police_report.json', 'r') as f:
+with open('quandale_police_report.json', 'r') as f:
     report_data = json.load(f)
 
 
