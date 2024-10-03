@@ -1,14 +1,12 @@
+import asyncio
+import random
 import time
 
 import discord
-from config import client
 import discord.ext
-import time
-import random
-import discord
-import asyncio
-from config import client
 import discord.ext
+
+from config import client
 
 im_Kampf = []
 cooldowns = {}  # Cooldown-System
