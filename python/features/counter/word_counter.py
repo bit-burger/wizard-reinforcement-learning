@@ -46,13 +46,13 @@ async def message(m: discord.Message):
         word_object.save()
 
 
-@tree.command(name="wcf", description="wer diesen command benutzt hat einen iq < 30",
+@tree.command(name="wc_all", description="lists all counted words",
               guild=discord.Object(1205582028905648209))
 async def wcf(interaction: discord.Interaction, user: discord.Member = None, word: str = None, offset: int = 0):
     await wc_base(interaction, user, word, 1000000, offset)
 
 
-@tree.command(name="wc", description="wer diesen command benutzt hat einen iq < 30",
+@tree.command(name="wc", description="lists 10 most used words",
               guild=discord.Object(1205582028905648209))
 async def wc(interaction: discord.Interaction, user: discord.Member = None, word: str = None, limit: int = 10,
              offset: int = 0):
@@ -96,7 +96,7 @@ async def wc_base(interaction: discord.Interaction, user: discord.Member = None,
         description = "top words"
     description += f" in {interaction.guild.name}"
     embed = discord.Embed(description=f"**{description}**").add_field(name="words", value=words).add_field(name="count",
-                                                                                                           value=counts)
+                                                                                                        value=counts)
     if not user and word:
         embed.add_field(name="user", value=user_ids)
     await interaction.response.send_message(embed=embed)

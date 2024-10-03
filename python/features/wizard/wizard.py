@@ -1,6 +1,6 @@
 import random
 
-from hilfen.wizzard_konstanten import *
+from features.wizard.wizard_konstanten import *
 
 
 def get_color_name(color: Color) -> str:
