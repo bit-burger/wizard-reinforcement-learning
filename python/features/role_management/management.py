@@ -65,7 +65,8 @@ async def role(interaction: discord.Interaction, role_name: str, color: str = '#
     tag = db.get_tag(role_name)
     if tag:
         await interaction.response.send_message(f"Role '{role_name}' exists in the database. Bringing it to Discord...")
-        await swap_role_in(role_name) #TODO: schaffe Platz für die Rolle
+        await ensure_space_for_role()
+        await swap_role_in(role_name)
         await interaction.response.send_message(f"Role '{role_name}' has been successfully brought to Discord.")
         return
     if len(guild.roles) >= 250:
@@ -73,16 +74,7 @@ async def role(interaction: discord.Interaction, role_name: str, color: str = '#
         dc_last_used_role = await discord.utils.get(guild.roles, name=last_used_role)
         if dc_last_used_role:
             await swap_role_out(dc_last_used_role)
-    #TODO: merge code below with swap_role_in ?
-    dc_color = discord.Color(int(color.strip('#'), 16))
-    new_role = await guild.create_role(name=role_name, color=dc_color)
-    db.insert_role(role_name)
-    db.update_role_last_used(role_name) #TODO: ist notwendig, oder passiert das schon in insert_role?
-    if members:
-        for member_id in members:
-            member = guild.get_member(member_id)
-            if member:
-                await member.add_roles(new_role)
+    await swap_role_in(role_name, color, members)
     await interaction.response.send_message(f"Role '{role_name}' created and assigned to members (if provided).")
 
 
@@ -129,7 +121,8 @@ async def on_message(message: discord.Message):
                 continue
             tag = db.get_tag(role_name)
             if tag:
-                await swap_role_in(role_name) #TODO schaffe Platz für die Rolle
+                await ensure_space_for_role()
+                await swap_role_in(role_name)
                 await message.channel.send(f"Role '{role_name}' exists in the database and has been re-added to Discord.")
             else:
                 await message.channel.send(f"Role '{role_name}' does not exist in Discord or the database.")
@@ -157,26 +150,30 @@ def on_role_rename(before: discord.Role, after: discord.Role):
 
 
 """
-TODO: complete documentation
+Bringt eine Rolle ins Discord, entweder basierend auf der Datenbank oder mit übergebenen Attributen.
+Wenn nur der Rollenname übergeben wird, werden die Farbe und/oder die Mitgliederliste aus der Datenbank geholt,
+sofern diese nicht als Argumente übergeben wurden.
 """
-async def swap_role_in(role_name: str):
-    tag = db.get_tag(role_name)
-    if tag:
-        color = tag['color']
-        members = db.get_members_by_tag(role_name)
-        dc_role = await guild.create_role(name=role_name, color=discord.Color(int(color.strip('#'), 16)))
-        for member_id in members:
-            member = guild.get_member(member_id)
-            if member:
-                await member.add_roles(dc_role)
-        db.insert_role(role_name)
-        db.delete_tag(role_name)
-        db.update_role_last_used(role_name) #TODO: ist notwendig, oder passiert das schon in insert_role?
-        print(f"Role '{role_name}' has been swapped in from the database to Discord.")
+async def swap_role_in(role_name: str, color: str = None, members: list[int] = None):
+    if color is None or members is None:
+        tag = db.get_tag(role_name)
+        if tag:
+            if color is None:
+                color = tag['color']
+            if members is None:
+                members = [member[0] for member in db.get_members_by_tag(role_name)]
+    dc_role = await guild.create_role(name=role_name, color=discord.Color(int(color.strip('#'), 16)))
+    for member_id in members:
+        member = guild.get_member(member_id)
+        if member:
+            await member.add_roles(dc_role)
+    db.insert_role(role_name)
+    db.delete_tag(role_name)
+    print(f"Role '{role_name}' has been swapped in from the database to Discord.")
 
 
 """
-TODO: complete documentation
+Entfernt eine Rolle aus Discord und speichert sie als Tag in der Datenbank.
 """
 async def swap_role_out(dc_role: discord.Role):
     members = [member.id for member in dc_role.members]
@@ -184,3 +181,16 @@ async def swap_role_out(dc_role: discord.Role):
     await dc_role.delete()
     db.delete_role(dc_role.name)
     print(f"Role '{dc_role.name}' has been swapped out from Discord to the database.")
+
+
+"""
+Prüft, ob genügend Platz für eine neue Rolle ist.
+Wenn nicht, wird die Rolle mit dem ältesten Timestamp gelöscht und als Tag in die Datenbank geschrieben.
+"""
+async def ensure_space_for_role():
+    if len(guild.roles) >= 250:
+        last_used_role = db.get_last_used_role()
+        if last_used_role:
+            dc_last_used_role = await discord.utils.get(guild.roles, name=last_used_role[0])
+            if dc_last_used_role:
+                await swap_role_out(dc_last_used_role)
