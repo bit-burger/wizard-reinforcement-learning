@@ -1,10 +1,14 @@
+import os
+
 import discord
 import json
 import random
 
 from config import tree
 
-with open('fortnite_quotes.json', 'r') as f:
+script_dir = os.path.dirname(os.path.abspath(__file__))
+json_path = os.path.join(script_dir, 'fortnite_quotes.json')
+with open(json_path, 'r') as f:
     quotes = json.load(f)
 
 quote_used = {quote: False for quote in quotes}

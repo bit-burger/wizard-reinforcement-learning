@@ -1,12 +1,17 @@
+import os
+
 import discord
 import json
 
 from config import tree
 
-with open('quandale_lore.json', 'r') as f:
+script_dir = os.path.dirname(os.path.abspath(__file__))
+lore_path = os.path.join(script_dir, 'quandale_lore.json')
+report_path = os.path.join(script_dir, 'quandale_police_report.json')
+with open(lore_path, 'r') as f:
     lore_data = json.load(f)
 
-with open('quandale_police_report.json', 'r') as f:
+with open(report_path, 'r') as f:
     report_data = json.load(f)
 
 
