@@ -1,5 +1,5 @@
 import discord
-from discord import app_commands
+from discord import app_commands, ui
 import asyncio
 import random
 from enum import Enum
@@ -49,6 +49,9 @@ class Player:
         self.called_stiche = 0
         self.gewonnene_stiche = 0
 
+    @property
+    def formatted_name(self):
+        return self.name.replace('_', '\\_')
 
 class GameState:
     def __init__(self):
@@ -142,6 +145,7 @@ async def wizzard(interaction: discord.Interaction):
                 description=interaction.user.name.replace("_","\\_")+" has joined the game!",
                 color=discord.Color.green()
             )
+            await game.broadcast_to_players("", embed=embed)
         else:
             await interaction.response.send_message(f"The game is full. Maximum {PLAYERS_MAX} players allowed.",
                                                     ephemeral=True)
@@ -287,12 +291,12 @@ async def play_stich(game: GameState, interaction: discord.Interaction):
     # Create embed message for stich winner and tricks information
     embed = discord.Embed(
         title="🏅 Stich Winner!",
-        description=game.players[winner_index].name.replace("_", "\\_") + " won this stich!",
+        description=f"{game.players[winner_index].formatted_name} won this stich!",
         color=discord.Color.green()
     )
     tricks_info = ""
     for player in game.players:
-        tricks_info += player.name.replace('_', '\\_')+": "+ str(player.gewonnene_stiche)+"/"+str(player.called_stiche)+" | Score: " + str(player.score)+"\n"
+        tricks_info += f"{player.formatted_name}: {player.gewonnene_stiche}/{player.called_stiche} | Score: {player.score}\n"
     embed.add_field(name="Tricks Information", value=tricks_info, inline=False)
 
     await game.broadcast_to_players("", embed=embed)
@@ -313,7 +317,7 @@ async def play_card_for_player(game: GameState, player: Player, interaction: dis
     for i in range(len(game.players)):
         stich_player = game.players[(game.start_player + i) % len(game.players)]
         card_info = f"{card_emojis[game.stich[i].value] if game.stich[i].value in [0, 14] else card_emojis[game.stich[i].color]} {get_card_name(game.stich[i])}" if i < len(game.stich) else "No card played"
-        stich_info += stich_player.name.replace("_", "\\_") + ": " + card_info + "\n"
+        stich_info += f"{stich_player.formatted_name}: {card_info}\n"
 
     embed = discord.Embed(
         title="Current Trick State",
@@ -325,17 +329,17 @@ async def play_card_for_player(game: GameState, player: Player, interaction: dis
     # Prompt the player to play a card
     hand = "\n".join([f"{card_emojis[card.value] if card.value in [0, 14] else card_emojis[card.color]} {get_card_name(card)}" for card in player.hand])
     embed = discord.Embed(
-        title=player.name.replace("_", "\\_") + " it's your turn!",
+        title=player.formatted_name + " it's your turn!",
         description="Choose a card to play from your hand:",
         color=discord.Color.red()
     )
     embed.add_field(name="Your Hand", value=hand, inline=False)
     tricks_info = ""
     for p in game.players:
-        tricks_info += p.name.replace("_", "\\_") + ": " + str(p.gewonnene_stiche) + "/" + str(p.called_stiche) + "\n"
+        tricks_info += f"{p.formatted_name}: {p.gewonnene_stiche}/{p.called_stiche}\n"
     embed.add_field(name="Tricks Information", value=tricks_info, inline=False)
 
-    # Determine allowed cards
+    # Determine allowed crds
     if game.stich:
         first_card_suit = game.stich[0].color
         allowed_cards = [card for card in player.hand if card.color == first_card_suit and card.value not in [0, 14]]
@@ -367,8 +371,8 @@ async def play_card_for_player(game: GameState, player: Player, interaction: dis
     if view.value is not None:
         played_card = game.play_card(game.players.index(player), view.value)
         embed = discord.Embed(
-            title=player.name.replace("_", "\\_") + " played a card!",
-            description=player.name.replace("_", "\\_") + " played " + (card_emojis[played_card.value] if played_card.value in [0, 14] else card_emojis[played_card.color]) + " " + get_card_name(played_card),
+            title=player.formatted_name + " played a card!",
+            description=f"{player.formatted_name} played {card_emojis[played_card.value] if played_card.value in [0, 14] else card_emojis[played_card.color]} {get_card_name(played_card)}",
             color=discord.Color.purple()
         )
         #await game.broadcast_to_players("", embed=embed)
@@ -380,18 +384,15 @@ async def update_stich_state(game: GameState, interaction: discord.Interaction):
     for i in range(len(game.players)):
         player = game.players[(game.start_player + i) % len(game.players)]
         card_info = f"{card_emojis[game.stich[i].color] if game.stich[i].value not in [0,14] else card_emojis[game.stich[i].value]} {get_card_name(game.stich[i])}" if i < len(game.stich) else "______________"
-        stich_info += player.name.replace("_","\\_")+" [Tricks: "+str(player.gewonnene_stiche)+"/"+str(player.called_stiche) +" | Score: "+str(player.score)+"] : "+ card_info+"\n"
+        stich_info += f"{player.formatted_name} [Tricks: {player.gewonnene_stiche}/{player.called_stiche} | Score: {player.score}] : {card_info}\n"
     embed = discord.Embed(
         title="Current Stich State",
         description=stich_info,
         color=discord.Color.orange()
     )
 
-
-
     await game.broadcast_to_players("", embed=embed)
     await interaction.channel.send(embed=embed)
-
 
 async def ask_for_prediction(game: GameState, player: Player, index: int):
     global card_emojis
@@ -402,9 +403,8 @@ async def ask_for_prediction(game: GameState, player: Player, index: int):
         description=f"How many tricks do you think you'll win this round?",
         color=discord.Color.red()
     )
-    embed.add_field(name="Trump Card", value=card_emojis[game.trump.color]+" "+get_card_name(game.trump) if game.trump.value not in [0,14] else "", inline=False)
+    embed.add_field(name="Trump Card", value=card_emojis[game.trump.value] if game.trump.value in [0, 14] else card_emojis[game.trump.color] + " " + get_card_name(game.trump), inline=False)
     embed.add_field(name="Your Hand", value=hand, inline=False)
-    #determine, if its the last player to predict
 
     total_predicted = sum([p.called_stiche for p in game.players])
     max_value = game.current_round
@@ -416,15 +416,14 @@ async def ask_for_prediction(game: GameState, player: Player, index: int):
     class PredictDropdown(Select):
         def __init__(self, options: List[int]):
             select_options = [discord.SelectOption(label=str(i), value=str(i)) for i in options]
-            super().__init__(placeholder="Select number of tricks...", min_values=1, max_values=1,
-                             options=select_options)
+            super().__init__(placeholder="Select number of tricks...", min_values=1, max_values=1, options=select_options)
 
         async def callback(self, interaction: discord.Interaction):
             self.view.value = int(self.values[0])
             self.view.stop()
 
     class PredictView(View):
-        def __init__(self, options: List[int], timeout: float = None):  # Timeout auf None gesetzt
+        def __init__(self, options: List[int], timeout: float = None):
             super().__init__(timeout=timeout)
             self.value = None
             self.add_item(PredictDropdown(options))
@@ -437,11 +436,10 @@ async def ask_for_prediction(game: GameState, player: Player, index: int):
         player.called_stiche = view.value
         embed = discord.Embed(
             title="🎯 Prediction Made!",
-            description=player.name.replace("_","\\_")+" predicted "+str(view.value)+" tricks for this round.",
+            description=f"{player.formatted_name} predicted {view.value} tricks for this round.",
             color=discord.Color.dark_blue()
         )
         await game.broadcast_to_players(f"", embed=embed)
-
 
 async def display_round_results(interaction: discord.Interaction, game: GameState):
     # Update scores and reset predictions and won tricks
@@ -458,7 +456,7 @@ async def display_round_results(interaction: discord.Interaction, game: GameStat
     )
     for player in game.players:
         embed.add_field(
-            name=player.name.replace("_","\\_"),
+            name=player.formatted_name,
             value=f"Predicted Tricks: {player.called_stiche}\nWon Tricks: {player.gewonnene_stiche}\nScore: {player.score}",
             inline=False
         )
@@ -475,18 +473,16 @@ async def end_game(interaction: discord.Interaction, game: GameState):
 
     embed = discord.Embed(
         title="🏆 Game Over!",
-        description="Congratulations to "+winner.name.replace("_","\\_")+" with "+ str(winner.score)+" points!",
+        description=f"Congratulations to {winner.formatted_name} with {str(winner.score)} points!",
         color=discord.Color.gold()
     )
     for player in final_scores:
         embed.add_field(
-            name=player.name.replace("_","\\_"),
+            name=player.formatted_name,
             value=f"Final Score: {player.score}",
             inline=False
         )
-
     await interaction.channel.send(embed=embed)
-
     del games[interaction.channel_id]
 
 
