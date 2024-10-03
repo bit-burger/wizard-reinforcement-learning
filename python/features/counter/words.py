@@ -1,7 +1,10 @@
 import discord
-from peewee import Model, CharField, DateField, IntegerField, CompositeKey, fn, SQL
+from peewee import Model, CharField, IntegerField, CompositeKey, fn, SqliteDatabase
 
-from config import db, client, tree
+from config import client, tree
+
+db = SqliteDatabase('words.db')
+db.connect()
 
 
 class Word(Model):
@@ -24,6 +27,7 @@ Word.add_index(Word.server_id)
 
 abc = "abcdefghijklmnopqrstuvwxyzöäü-éèáàóòñ"
 rest = " ,;\n:\t/&%$\"!'*-_.,_()[]{}?`´"
+
 
 @client.event
 async def message(m: discord.Message):
@@ -96,7 +100,7 @@ async def wc_base(interaction: discord.Interaction, user: discord.Member = None,
         description = "top words"
     description += f" in {interaction.guild.name}"
     embed = discord.Embed(description=f"**{description}**").add_field(name="words", value=words).add_field(name="count",
-                                                                                                        value=counts)
+                                                                                                           value=counts)
     if not user and word:
         embed.add_field(name="user", value=user_ids)
     await interaction.response.send_message(embed=embed)
