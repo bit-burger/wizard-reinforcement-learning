@@ -10,7 +10,8 @@ class MultiUserSelect(ui.UserSelect):
 
     async def callback(self, interaction: discord.Interaction):
         selected_users = [user for user in self.values]
-        await interaction.response.send_message(f"Selected {len(selected_users)} user(s) for the role '{self.role_name}'.", ephemeral=True) # noqa
+        await interaction.response.send_message(  # noqa
+            f"Selected {len(selected_users)} user(s) for the role '{self.role_name}'.", ephemeral=True)
         self.view.selected_users = selected_users
         self.view.skipped = False
         self.view.stop()
@@ -21,7 +22,7 @@ class SkipButton(ui.Button):
         super().__init__(label="Skip", style=discord.ButtonStyle.danger)
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_message("Skipping user selection.", ephemeral=True) # noqa
+        await interaction.response.send_message("Skipping user selection.", ephemeral=True)  # noqa
         self.view.selected_users = []
         self.view.skipped = True
         self.view.stop()

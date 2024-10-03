@@ -3,26 +3,27 @@ from datetime import datetime
 import discord
 
 
-"""
-Klasse für die Verwaltung von Discord-Rollen und Tags in einer SQLite-Datenbank.
-
-Attribute:
-- connection: SQLite-Verbindung zur Datenbank.
-- cursor: SQLite-Cursor zum Ausführen von SQL-Befehlen.
-
-Methoden:
-- insert_tag(tag_name, color, members): Fügt einen neuen Tag mit einer bestimmten Farbe und einer Liste von Mitgliedern hinzu.
-- delete_tag(tag_name): Löscht einen Tag basierend auf seinem Namen.
-- get_tag(tag_name): Gibt Informationen über einen bestimmten Tag zurück.
-- get_tags(): Gibt eine Liste aller Tags zurück.
-- get_members_by_tag(tag_name): Gibt eine Liste von Mitgliedern (Discord-User-IDs) zurück, die zu einem bestimmten Tag gehören.
-- insert_role(role_name): Fügt eine neue Rolle in die Datenbank ein.
-- delete_role(role_name): Löscht eine Rolle basierend auf ihrem Namen aus der Datenbank.
-- update_role_last_used(role_name): Aktualisiert den Zeitstempel, wann eine Rolle zuletzt verwendet wurde.
-- get_last_used_role(): Gibt die am längsten nicht verwendete Rolle zurück.
-- close(): Schließt die Verbindung zur Datenbank.
-"""
 class Database:
+    """
+    Klasse für die Verwaltung von Discord-Rollen und Tags in einer SQLite-Datenbank.
+
+    Attribute:
+    - connection: SQLite-Verbindung zur Datenbank.
+    - cursor: SQLite-Cursor zum Ausführen von SQL-Befehlen.
+
+    Methoden:
+    - insert_tag(tag_name, color, members): Fügt einen neuen Tag mit einer bestimmten Farbe und einer Liste von Mitgliedern hinzu.
+    - delete_tag(tag_name): Löscht einen Tag basierend auf seinem Namen.
+    - get_tag(tag_name): Gibt Informationen über einen bestimmten Tag zurück.
+    - get_tags(): Gibt eine Liste aller Tags zurück.
+    - get_members_by_tag(tag_name): Gibt eine Liste von Mitgliedern (Discord-User-IDs) zurück, die zu einem bestimmten Tag gehören.
+    - insert_role(role_name): Fügt eine neue Rolle in die Datenbank ein.
+    - delete_role(role_name): Löscht eine Rolle basierend auf ihrem Namen aus der Datenbank.
+    - update_role_last_used(role_name): Aktualisiert den Zeitstempel, wann eine Rolle zuletzt verwendet wurde.
+    - get_last_used_role(): Gibt die am längsten nicht verwendete Rolle zurück.
+    - close(): Schließt die Verbindung zur Datenbank.
+    """
+
     def __init__(self, guild: discord.Guild = None):
         self.connection = sqlite3.connect('roles.db')
         self.cursor = self.connection.cursor()
