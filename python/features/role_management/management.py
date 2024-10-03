@@ -53,20 +53,20 @@ Wenn nicht ausreichend Platz ist, wird erst die Rolle mit dem ältesten Timestam
 async def role(interaction: discord.Interaction, role_name: str, color: str = '#F4F4F4'):
     dc_role = discord.utils.get(guild.roles, name=role_name)
     if dc_role:
-        await interaction.response.send_message(f"Role '{role_name}' already exists on Discord.", ephemeral=True)
+        await interaction.response.send_message(f"Role '{role_name}' already exists on Discord.", ephemeral=True) # noqa
         db.update_role_last_used(role_name)
         return
     tag = db.get_tag(role_name)
     if tag:
-        await interaction.response.send_message(f"Role '{role_name}' exists in the database (maybe with different color). "
+        await interaction.response.send_message(f"Role '{role_name}' exists in the database (maybe with different color). " # noqa
                                                 f"Bringing it to Discord...", ephemeral=True)
         await ensure_space_for_role()
         await swap_role_in(role_name, color)
-        await interaction.response.send_message(f"Role '{role_name}' has been successfully brought to Discord.", ephemeral=True)
+        await interaction.response.send_message(f"Role '{role_name}' has been successfully brought to Discord.", ephemeral=True) # noqa
         return
     await ensure_space_for_role()
     view = RoleAssignmentView(role_name, color)
-    await interaction.response.send_message("Please select users to assign the role or press 'Skip':", view=view, ephemeral=True)
+    await interaction.response.send_message("Please select users to assign the role or press 'Skip':", view=view, ephemeral=True) # noqa
     await view.wait()
     selected_users = view.selected_users
     user_ids = [user.id for user in selected_users] if not view.skipped else []
@@ -85,7 +85,7 @@ Gibt eine Liste aller Tags aus und zu jedem Tag tabellarisch (in einer Ascii-Tab
 async def show_tags(interaction: discord.Interaction, limit: int = 0):
     tags = db.get_tags()
     if not tags:
-        await interaction.response.send_message("No tags available.", ephemeral=True)
+        await interaction.response.send_message("No tags available.", ephemeral=True) # noqa
         return
     tag_list = []
     for tag in tags:
@@ -94,7 +94,7 @@ async def show_tags(interaction: discord.Interaction, limit: int = 0):
         tag_list.append(f"{tag[0]} (Color: {tag[1]}): {member_list or 'No members'}")
     if limit > 0:
         tag_list = tag_list[:limit]
-    await interaction.response.send_message("\n".join(tag_list), ephemeral=True)
+    await interaction.response.send_message("\n".join(tag_list), ephemeral=True) # noqa
 
 
 """
