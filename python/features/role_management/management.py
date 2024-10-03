@@ -62,12 +62,10 @@ async def role(interaction: discord.Interaction, role_name: str, color: str = '#
     tag = db.get_tag(role_name)
     if tag:
         await interaction.response.send_message(  # noqa
-            f"Role '{role_name}' exists in the database (maybe with different color). "
+            f"Role '{role_name}' already exists in the database (maybe with different color). "
             f"Bringing it to Discord...", ephemeral=True)
         await ensure_space_for_role()
         await swap_role_in(role_name, color)
-        await interaction.response.send_message(f"Role '{role_name}' has been successfully brought to Discord.",  # noqa
-                                                ephemeral=True)
         return
     await ensure_space_for_role()
     view = RoleAssignmentView(role_name, color)
@@ -76,13 +74,8 @@ async def role(interaction: discord.Interaction, role_name: str, color: str = '#
     await view.wait()
     selected_users = view.selected_users
     user_ids = [user.id for user in selected_users] if not view.skipped else []
-    if view.skipped:
-        await interaction.followup.send("No users were selected. Proceeding without user assignments.", ephemeral=True)
-    else:
-        await interaction.followup.send(f"Role '{role_name}' is being assigned to {len(selected_users)} users.",
-                                        ephemeral=True)
     await swap_role_in(role_name, color, user_ids)
-    await interaction.followup.send(f"Role '{role_name}' created and assigned to members (if provided).",
+    await interaction.followup.send(f"Role '{role_name}' created and assigned to {len(selected_users)} members.",
                                     ephemeral=True)
 
 
@@ -136,18 +129,19 @@ async def on_message(message: discord.Message):
             else:
                 await message.channel.send(f"Role '{role_name}' does not exist in Discord or the database.")
 
-
+# TODO: supress all action if event caused by self
 @client.event
-def on_role_delete(deleted_role: discord.Role):
+async def on_guild_role_delete(deleted_role: discord.Role):
     """
     Wenn eine Rolle auf dem Discord Server gelöscht wird, wird die Rolle auch aus der Datenbank gelöscht.
     """
     db.delete_role(deleted_role.name)
-    print(f"Role '{deleted_role.name}' has been deleted from Discord and the database.")
+    print(f"Role '{deleted_role.name}' has been deleted from roles by swapping/user-input")
 
 
+# TODO: supress all action if event caused by self
 @client.event
-def on_role_rename(before: discord.Role, after: discord.Role):
+async def on_guild_role_update(before: discord.Role, after: discord.Role):
     """
     Wenn eine Rolle auf dem Discord Server umbenannt wird, wird die Rolle auch aus der Datenbank umbenannt.
     Dabei aktualisiert sich der Timestamp der Rolle in 'roles'.
@@ -173,12 +167,12 @@ async def swap_role_in(role_name: str, color: str = None, members: list[int] = N
                 members = [member[0] for member in db.get_members_by_tag(role_name)]
     dc_role = await guild.create_role(name=role_name, color=discord.Color(int(color.strip('#'), 16)))
     for member_id in members:
-        member = guild.get_member(member_id)
+        member = await guild.fetch_member(member_id)
         if member:
             await member.add_roles(dc_role)
     db.insert_role(role_name)
     db.delete_tag(role_name)
-    print(f"Role '{role_name}' has been swapped in from the database to Discord.")
+    print(f"Role '{role_name}' has been swapped in from the database/user-input to Discord.")
 
 
 async def swap_role_out(dc_role: discord.Role):
