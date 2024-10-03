@@ -30,7 +30,7 @@ async def message(nachricht):
 
 
 def update_anzahl():
-    with open(r'../stellequandaleantworten.txt', 'w', encoding='utf-8') as f:
+    with open(r'stellequandaleantworten.txt', 'w', encoding='utf-8') as f:
         global stelle
         f.flush()
         f.write(str(stelle))
@@ -38,15 +38,15 @@ def update_anzahl():
 
 
 def get_anzahl():
-    with open(r'../stellequandaleantworten.txt', 'r', encoding='utf-8') as f:
+    with open(r'stellequandaleantworten.txt', 'r', encoding='utf-8') as f:
         global stelle
         stelle = int(f.read().strip())
         f.close()
 
 
 def check_and_create_file():
-    if not os.path.isfile('../stellequandaleantworten.txt'):
-        with open('../stellequandaleantworten.txt', 'w', encoding='utf-8') as f:
+    if not os.path.isfile('stellequandaleantworten.txt'):
+        with open('stellequandaleantworten.txt', 'w', encoding='utf-8') as f:
             f.write('0')
             f.close()
 
@@ -55,7 +55,7 @@ def check_and_create_file():
 async def ready():
     global stelle
     global antworten
-    with open(r'resources/quandale.txt', 'r', encoding='utf-8') as f:
+    with open(r'quandale.txt', 'r', encoding='utf-8') as f:
         antworten = f.read().split('///')
     f.close()
     check_and_create_file()
