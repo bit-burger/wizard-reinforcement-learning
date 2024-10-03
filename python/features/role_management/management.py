@@ -25,6 +25,7 @@ db: Optional[Database] = None
 
 guild: Optional[discord.Guild] = None
 guild_id: int = 1205582028905648209
+is_bot_action = False
 
 
 @client.event
@@ -129,27 +130,34 @@ async def on_message(message: discord.Message):
             else:
                 await message.channel.send(f"Role '{role_name}' does not exist in Discord or the database.")
 
-# TODO: supress all action if event caused by self
+
 @client.event
 async def on_guild_role_delete(deleted_role: discord.Role):
     """
     Wenn eine Rolle auf dem Discord Server gelöscht wird, wird die Rolle auch aus der Datenbank gelöscht.
     """
+    global is_bot_action
+    if is_bot_action:
+        return
     db.delete_role(deleted_role.name)
     print(f"Role '{deleted_role.name}' has been deleted from roles by swapping/user-input")
 
 
-# TODO: supress all action if event caused by self
 @client.event
 async def on_guild_role_update(before: discord.Role, after: discord.Role):
     """
     Wenn eine Rolle auf dem Discord Server umbenannt wird, wird die Rolle auch aus der Datenbank umbenannt.
     Dabei aktualisiert sich der Timestamp der Rolle in 'roles'.
     """
+    if before.name == after.name and before.color == after.color:
+        return
     db.delete_role(before.name)
     db.insert_role(after.name)
     db.update_role_last_used(after.name)
-    print(f"Role '{before.name}' has been renamed to '{after.name}' in Discord and updated in the database.")
+    if before.name == after.name:
+        print(f"Role '{before.name}' has been renamed to '{after.name}' in Discord and updated in the database.")
+    if before.color == after.color:
+        print(f"Role '{before.name}' has been updated in Discord and the color has been updated in the database.")
 
 
 async def swap_role_in(role_name: str, color: str = None, members: list[int] = None):
@@ -179,9 +187,12 @@ async def swap_role_out(dc_role: discord.Role):
     """
     Entfernt eine Rolle aus Discord und speichert sie als Tag in der Datenbank.
     """
+    global is_bot_action
     members = [member.id for member in dc_role.members]
     db.insert_tag(dc_role.name, f'#{dc_role.color.value:06X}', members)
+    is_bot_action = True
     await dc_role.delete()
+    is_bot_action = False
     db.delete_role(dc_role.name)
     print(f"Role '{dc_role.name}' has been swapped out from Discord to the database.")
 
