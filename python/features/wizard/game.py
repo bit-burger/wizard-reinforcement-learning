@@ -88,15 +88,31 @@ class GameState:
         return played_card
 
     def determine_stich_winner(self) -> int:
-        winning_card = self.stich[0]
-        winning_player = 0
-        for i, card in enumerate(self.stich[1:], 1):
-            if (card.color == winning_card.color and card.value > winning_card.value) or \
-                    (self.trump and card.color == self.trump.color and winning_card.color != self.trump.color) or \
-                    (card.value == 14):  # Wizard always wins
+        winning_card = None
+        winning_player = -1
+
+        for i, card in enumerate(self.stich):
+            if card.value == 14:  # Wizard card
+                return (self.current_player + i) % len(self.players)
+            if winning_card is None:
                 winning_card = card
                 winning_player = i
-        return (self.start_player + winning_player) % len(self.players)
+            elif winning_card.value == 0:  # Jester card
+                winning_card = card
+                winning_player = i
+            elif card.value != 0:
+                if winning_card.color == self.trump.color:
+                    if card.color == self.trump.color and card.value > winning_card.value:
+                        winning_card = card
+                        winning_player = i
+                elif card.color == self.trump.color:
+                    winning_card = card
+                    winning_player = i
+                elif card.color == winning_card.color and card.value > winning_card.value:
+                    winning_card = card
+                    winning_player = i
+
+        return (self.current_player + winning_player) % len(self.players)
 
     def reset_stich(self):
         self.stich = []
@@ -186,8 +202,7 @@ async def play_round(interaction: discord.Interaction, game: GameState):
     game.shuffle_deck()
     game.deal_cards()
     game.trump = game.deck[0]
-    game.current_player = game.current_round % len(game.players)
-
+    game.current_player = (game.current_round - 1) % len(game.players)
 
     trump_display = f"{card_emojis[game.trump.color]} {get_card_name(game.trump)}"
     embed = discord.Embed(
@@ -199,7 +214,7 @@ async def play_round(interaction: discord.Interaction, game: GameState):
     if game.trump.value == 14:  # Wizard as trump means the first player chooses the trump color
         await choose_trump_color(game, game.players[game.current_player], interaction)
     for i in range(len(game.players)):
-        temp_player = game.players[i+game.current_player % len(game.players)]
+        temp_player = game.players[(i + game.current_player) % len(game.players)]
         await ask_for_prediction(game, temp_player, i)
     await play_stich(game, interaction)
     while not game.is_round_over():
@@ -269,8 +284,8 @@ async def play_stich(game: GameState, interaction: discord.Interaction):
 
     # Each player plays a card
     for i in range(len(game.players)):
-        current_player = game.players[game.current_player+i % len(game.players)]
-        await play_card_for_player(game, current_player, interaction,i)
+        current_player = game.players[(game.current_player + i) % len(game.players)]
+        await play_card_for_player(game, current_player, interaction, i)
 
     # Determine the suit to follow based on the first non-Narre and non-Wizard card
     suit_to_follow = None
@@ -298,14 +313,17 @@ async def play_stich(game: GameState, interaction: discord.Interaction):
     await interaction.channel.send(embed=embed)
 
     # The winner of the stich plays the next card
-    game.start_player = winner_index
+    game.current_player = winner_index
 
 
-async def play_card_for_player(game: GameState, player: Player, interaction: discord.Interaction, stichNummer: int = -1):
+async def play_card_for_player(game: GameState, player: Player, interaction: discord.Interaction,
+                               stichNummer: int = -1):
     global card_emojis
 
     # Prompt the player to play a card
-    hand = "\n".join([f"{card_emojis[card.value] if card.value in [0, 14] else card_emojis[card.color]} {get_card_name(card)}" for card in player.hand])
+    hand = "\n".join(
+        [f"{card_emojis[card.value] if card.value in [0, 14] else card_emojis[card.color]} {get_card_name(card)}" for
+         card in player.hand])
     embed = discord.Embed(
         title=player.formatted_name + " Du bist dran!",
         description="Spiele eine Karte:",
@@ -315,16 +333,28 @@ async def play_card_for_player(game: GameState, player: Player, interaction: dis
 
     # Determine allowed cards
     if game.stich:
-        first_card_suit = game.stich[0].color
-        allowed_cards = [card for card in player.hand if card.color == first_card_suit and card.value not in [0, 14]]
+        i = 0
+        while game.stich[i].value in [0, 14] and i < len(game.stich) - 1:
+            i += 1
+        first_card_suit = game.stich[i].color
+        allowed_cards = [card for card in player.hand if card.color == first_card_suit]
+
+        # Check if the only cards that match the suit are Wizards or Jesters
+        if all(card.value in [0, 14] for card in allowed_cards):
+            allowed_cards = player.hand
+        else:
+            allowed_cards += [card for card in player.hand if card.color == game.trump.color or card.value in [0, 14]]
+
         if not allowed_cards:
             allowed_cards = player.hand
-    else:
-        allowed_cards = player.hand
+        else:
+            allowed_cards = player.hand
 
     class CardDropdown(Select):
         def __init__(self, allowed_cards: List[Card]):
-            options = [discord.SelectOption(label=get_card_name(card), value=str(i), emoji=card_emojis[card.value] if card.value in [0, 14] else card_emojis[card.color])
+            options = [discord.SelectOption(label=get_card_name(card), value=str(i),
+                                            emoji=card_emojis[card.value] if card.value in [0, 14] else card_emojis[
+                                                card.color])
                        for i, card in enumerate(allowed_cards)]
             super().__init__(placeholder="Wähle eine Karte", min_values=1, max_values=1, options=options)
 
@@ -358,7 +388,9 @@ async def play_card_for_player(game: GameState, player: Player, interaction: dis
     # Update the combined trick and stich state
     await update_stich_state(game, interaction, stichNummer)
 
+
 last_stich_message_ids = {}
+
 
 async def update_stich_state(game: GameState, interaction: discord.Interaction, stichNummer: int = -1):
     global card_emojis
@@ -369,9 +401,9 @@ async def update_stich_state(game: GameState, interaction: discord.Interaction, 
     # Broadcast the current trick state to all players
     stich_info = ""
     for i in range(len(game.players)):
-        temp_player = game.players[(game.start_player + i) % len(game.players)]
+        temp_player = game.players[(game.current_player + i) % len(game.players)]
         card_info = f"{card_emojis[game.stich[i].value] if game.stich[i].value in [0, 14] else card_emojis[game.stich[i].color]} {get_card_name(game.stich[i])}" if i < len(game.stich) else "______________"
-        stich_info += f"{temp_player.formatted_name} [{temp_player.called_stiche}/{temp_player.gewonnene_stiche}] : {card_info}\n"
+        stich_info += f"{temp_player.formatted_name} [{temp_player.gewonnene_stiche}/{temp_player.called_stiche}] : {card_info}\n"
 
     embed = discord.Embed(
         title="Aktuelle Stiche",
@@ -405,7 +437,8 @@ async def ask_for_prediction(game: GameState, player: Player, index: int):
         color=discord.Color.red()
     )
     embed.add_field(name="Trumpf",
-                    value=card_emojis[game.trump.value] if game.trump.value == 0 else card_emojis[game.trump.color] + " " + get_card_name(game.trump), inline=False)
+                    value=card_emojis[game.trump.value] if game.trump.value == 0 else card_emojis[game.trump.color] + " " + get_card_name(
+                        game.trump), inline=False)
     embed.add_field(name="Deine Hand", value=hand, inline=False)
 
     total_predicted = sum([p.called_stiche for p in game.players])
