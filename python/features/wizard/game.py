@@ -173,7 +173,7 @@ async def begin_game(interaction: discord.Interaction):
                                                 ephemeral=True)
         return
 
-    game.current_round = 0
+    game.current_round = 1
     embed = discord.Embed(
         title="🚀 Das Wizard Spiel hat gestartet 🎲!",
         color=discord.Color.purple()
@@ -187,21 +187,21 @@ async def play_round(interaction: discord.Interaction, game: GameState):
     game.deal_cards()
     game.trump = game.deck[0]
     game.current_player = game.current_round % len(game.players)
+
+
+    trump_display = f"{card_emojis[game.trump.color]} {get_card_name(game.trump)}"
+    embed = discord.Embed(
+        title=f"Runde {game.current_round}!",
+        description=f"Trumpf: {trump_display}",
+        color=discord.Color.gold())
+
+    await game.broadcast_to_players("", embed=embed)
     if game.trump.value == 14:  # Wizard as trump means the first player chooses the trump color
         await choose_trump_color(game, game.players[game.current_player], interaction)
-    else:
-        trump_display = f"{card_emojis[game.trump.color]} {get_card_name(game.trump)}"
-        embed = discord.Embed(
-            title=f"Runde {game.current_round}!",
-            description=f"Trumpf: {trump_display}",
-            color=discord.Color.gold()
-        )
-        await game.broadcast_to_players("", embed=embed)
-
     for i in range(len(game.players)):
         temp_player = game.players[i+game.current_player % len(game.players)]
         await ask_for_prediction(game, temp_player, i)
-
+    await play_stich(game, interaction)
     while not game.is_round_over():
         await play_stich(game, interaction)
 
@@ -242,7 +242,7 @@ async def choose_trump_color(game: GameState, player: Player, interaction: disco
          card in player.hand])
     embed = discord.Embed(
         title="Wähle eine Trumpf Farbe",
-        description="Der Trumpf ist ein ?? Wizard. Wähle die Trumpf Farbe",
+        description="Der Trumpf ist ein Wizard. Wähle die Trumpf Farbe",
         color=discord.Color.gold()
     )
     embed.add_field(name="Deine Hand", value=hand, inline=False)
@@ -270,7 +270,7 @@ async def play_stich(game: GameState, interaction: discord.Interaction):
     # Each player plays a card
     for i in range(len(game.players)):
         current_player = game.players[game.current_player+i % len(game.players)]
-        await play_card_for_player(game, current_player, interaction)
+        await play_card_for_player(game, current_player, interaction,i)
 
     # Determine the suit to follow based on the first non-Narre and non-Wizard card
     suit_to_follow = None
@@ -301,7 +301,7 @@ async def play_stich(game: GameState, interaction: discord.Interaction):
     game.start_player = winner_index
 
 
-async def play_card_for_player(game: GameState, player: Player, interaction: discord.Interaction):
+async def play_card_for_player(game: GameState, player: Player, interaction: discord.Interaction, stichNummer: int = -1):
     global card_emojis
 
     # Prompt the player to play a card
@@ -312,10 +312,6 @@ async def play_card_for_player(game: GameState, player: Player, interaction: dis
         color=discord.Color.red()
     )
     embed.add_field(name="Deine Hand", value=hand, inline=False)
-    tricks_info = ""
-    #for p in game.players:
-     #   tricks_info += f"{p.formatted_name}: {p.gewonnene_stiche}/{p.called_stiche}\n"
-    #embed.add_field(name="Stich Infos", value=tricks_info, inline=False)
 
     # Determine allowed cards
     if game.stich:
@@ -360,10 +356,11 @@ async def play_card_for_player(game: GameState, player: Player, interaction: dis
         #await game.broadcast_to_players("", embed=embed)
 
     # Update the combined trick and stich state
-    await update_stich_state(game, interaction)
+    await update_stich_state(game, interaction, stichNummer)
 
+last_stich_message_ids = {}
 
-async def update_stich_state(game: GameState, interaction: discord.Interaction):
+async def update_stich_state(game: GameState, interaction: discord.Interaction, stichNummer: int = -1):
     global card_emojis
 
     # Include the trump card in the display and highlight it
@@ -373,8 +370,7 @@ async def update_stich_state(game: GameState, interaction: discord.Interaction):
     stich_info = ""
     for i in range(len(game.players)):
         temp_player = game.players[(game.start_player + i) % len(game.players)]
-        card_info = f"{card_emojis[game.stich[i].value] if game.stich[i].value in [0, 14] else card_emojis[game.stich[i].color]} {get_card_name(game.stich[i])}" if i < len(
-            game.stich) else "______________"
+        card_info = f"{card_emojis[game.stich[i].value] if game.stich[i].value in [0, 14] else card_emojis[game.stich[i].color]} {get_card_name(game.stich[i])}" if i < len(game.stich) else "______________"
         stich_info += f"{temp_player.formatted_name} [{temp_player.called_stiche}/{temp_player.gewonnene_stiche}] : {card_info}\n"
 
     embed = discord.Embed(
@@ -382,7 +378,21 @@ async def update_stich_state(game: GameState, interaction: discord.Interaction):
         description=trump_info + "\n\n" + stich_info,
         color=discord.Color.orange()
     )
-    await game.broadcast_to_players("", embed=embed)
+
+    for player in game.players:
+        # Delete the previous stich message if it exists
+        if player.user.id in last_stich_message_ids and stichNummer != 0:
+            try:
+                last_message = await player.user.fetch_message(last_stich_message_ids[player.user.id])
+                await last_message.delete()
+            except discord.NotFound:
+                pass  # Message was already deleted
+
+        # Send the new stich message and store its ID
+        new_message = await player.user.send(embed=embed)
+        last_stich_message_ids[player.user.id] = new_message.id
+
+    # Also send the message to the interaction channel
     await interaction.channel.send(embed=embed)
 
 
