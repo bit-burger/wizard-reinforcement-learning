@@ -16,10 +16,10 @@ class InteractiveApplication(ReactiveApplicationView):
         super().__init__(ephemeral=True)
         self.fib = (0, 1)
 
-    async def fibonnaci(self):
+    async def fibonnaci(self, i):
         while 1:
             self.fib = (self.fib[1], self.fib[0] + self.fib[1])
-            await self.set_state()
+            await self.set_state(i)
             await asyncio.sleep(0.75)
 
     def render(self) -> Iterator[str | discord.Embed | ui.Item]:
