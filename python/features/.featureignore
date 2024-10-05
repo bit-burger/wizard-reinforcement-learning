@@ -3,3 +3,5 @@ role_database.py
 wizard_konstanten.py
 user_selection_view.py
 server_mirror.py
+generate_cards.py
+upload_cards.py
