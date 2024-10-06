@@ -3,8 +3,8 @@ import os
 
 from config import client
 
-EMOJIS_FOLDER = './features/wizard/card_deck'  # Folder containing your PNG files
-OUTPUT_JSON_FILE = './features/wizard/card_deck_info.json'
+EMOJIS_FOLDER = './features/wizard/neu/card_deck'  # Folder containing your PNG files
+OUTPUT_JSON_FILE = './features/wizard/neu/card_deck_info.json'
 GUILD_IDS = [1292267820360400989, 1292267784889303060]  # Replace with your list of guild IDs
 
 

@@ -24,7 +24,7 @@ def create_card(color, value, size=(105, 132)):
                            fill=None, radius=24, width=7, outline=taken_color)
 
     # Draw text
-    font = ImageFont.truetype("./Arial Rounded Bold.ttf", 70)
+    font = ImageFont.truetype("Arial Rounded Bold.ttf", 70)
 
     add = 1
     if value in [12, 13]:

@@ -54,9 +54,13 @@ if path.exists(ignore_file_path):
 
 # Verwende os.walk, um rekursiv durch die Ordnerstruktur zu gehen
 for root, dirs, files in os.walk("features"):
+    if "__pycache__" in root:
+        continue
+    has_init = "__init__.py" in files
+    if has_init:
+        files = ["__init__.py"]
     for file in files:
         filename = os.path.join(root, file)
-        isdir = path.isdir(filename)
 
         # Überspringe Dateien, die in der .featureignore-Datei gelistet sind
         if file in ignore_list:
@@ -67,17 +71,13 @@ for root, dirs, files in os.walk("features"):
             continue
 
         # Überprüfe, ob es sich um eine Datei handelt und ob __init__.py im Verzeichnis vorhanden ist
-        if isdir:
-            if not path.exists(os.path.join(filename, "__init__.py")):
-                continue
+        if filename.endswith(".py"):
+            filename = filename[:-3]  # Entferne die ".py"-Endung
         else:
-            if filename.endswith(".py"):
-                filename = filename[:-3]  # Entferne die ".py"-Endung
-            else:
-                continue
+            continue
 
         # Konvertiere den Dateipfad in ein Modulimportformat
-        module_path = os.path.relpath(filename, "features").replace(os.sep, ".")
+        module_path = os.path.relpath(root if has_init else filename, "features").replace(os.sep, ".")
 
         module_str += f"`{module_path}`" + "\n"
         begin_time = time()

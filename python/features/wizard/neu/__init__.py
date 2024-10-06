@@ -10,7 +10,7 @@ from discord import ui, Interaction
 from config import client, tree
 from helpers.reactive import ReactiveApplicationView, run_application, Button, run_application_on_message
 
-with open("features/wizard/card_deck_info.json", 'r') as file:
+with open("features/wizard/neu/card_deck_info.json", 'r') as file:
     card_deck_info_json = json.load(file)
 
 # Constants
