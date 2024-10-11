@@ -54,30 +54,39 @@ async def role(interaction: discord.Interaction, role_name: str, color: str = '#
     Wenn die Rolle noch nicht existiert wird sie ins Discord gebracht und zum Table 'roles' hinzugefügt.
     Wenn nicht ausreichend Platz ist, wird erst die Rolle mit dem ältesten Timestamp gelöscht und als Tag in die Datenbank geschrieben.
     """
+    # noinspection PyUnresolvedReferences
+    await interaction.response.defer()
     dc_role = discord.utils.get(guild.roles, name=role_name)
     if dc_role:
-        await interaction.response.send_message(f"Role '{role_name}' already exists on Discord.",  # noqa
-                                                ephemeral=True)
+        await interaction.followup.send(
+            f"Role '{role_name}' already exists on Discord.", ephemeral=True
+        )
         db.update_role_last_used(role_name)
         return
     tag = db.get_tag(role_name)
     if tag:
-        await interaction.response.send_message(  # noqa
+        await interaction.followup.send(
             f"Role '{role_name}' already exists in the database (maybe with different color). "
-            f"Bringing it to Discord...", ephemeral=True)
+            f"Bringing it to Discord...", ephemeral=True
+        )
         await ensure_space_for_role()
         await swap_role_in(role_name, color)
         return
     await ensure_space_for_role()
     view = RoleAssignmentView(role_name, color)
-    await interaction.response.send_message("Please select users to assign the role or press 'Skip':",  # noqa
-                                            view=view, ephemeral=True)
+    await interaction.followup.send(
+        "Please select users to assign the role or press 'Skip':", view=view, ephemeral=True
+    )
     await view.wait()
     selected_users = view.selected_users
     user_ids = [user.id for user in selected_users] if not view.skipped else []
     await swap_role_in(role_name, color, user_ids)
-    await interaction.followup.send(f"Role '{role_name}' created and assigned to {len(selected_users)} members.",
-                                    ephemeral=True)
+    if selected_users:
+        user_mentions = ', '.join([user.mention for user in selected_users])
+        await interaction.followup.send(f"Role '{role_name}' created and assigned to: {user_mentions}.",
+                                        ephemeral=False)
+    else:
+        await interaction.followup.send(f"Role '{role_name}' created but not assigned to any users.", ephemeral=False)
 
 
 @tree.command(name="show_tags", description="lists all tags", guild=discord.Object(guild_id))
@@ -173,7 +182,7 @@ async def swap_role_in(role_name: str, color: str = None, members: list[int] = N
                 color = tag['color']
             if members is None:
                 members = [member[0] for member in db.get_members_by_tag(role_name)]
-    dc_role = await guild.create_role(name=role_name, color=discord.Color(int(color.strip('#'), 16)))
+    dc_role = await guild.create_role(name=role_name, color=discord.Color(int(color.strip('#'), 16)), mentionable=True)
     for member_id in members:
         member = await guild.fetch_member(member_id)
         if member:
