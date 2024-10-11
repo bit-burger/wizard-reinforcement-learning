@@ -7,7 +7,6 @@ from discord import app_commands
 from discord.app_commands import AppCommand
 
 from multiple_event_client import MultipleEventClient
-
 config = json.load(open("../config.json"))
 token = config["token"]
 

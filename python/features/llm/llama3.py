@@ -59,7 +59,7 @@ async def message(m):
 def query_llama3_model(prompt):
     global conversation
     # URL of the locally hosted Llama3 model
-    url = "http://localhost:11434/api/generate"  # replace with your actual URL
+    url = "http://localhost:1337"  # replace with your actual URL
     # Data to be sent
     data = {
         "model": "llama3",
