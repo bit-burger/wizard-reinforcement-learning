@@ -1,3 +1,5 @@
+from typing import Optional
+
 import discord
 from discord import ui
 
@@ -13,6 +15,8 @@ class MultiUserSelect(ui.UserSelect):
         self.view.selected_users = selected_users
         self.view.skipped = False
         self.view.stop()
+        # noinspection PyUnresolvedReferences
+        await interaction.response.defer()
 
 
 class SkipButton(ui.Button):
@@ -23,6 +27,8 @@ class SkipButton(ui.Button):
         self.view.selected_users = []
         self.view.skipped = True
         self.view.stop()
+        # noinspection PyUnresolvedReferences
+        await interaction.response.defer()
 
 
 class RoleAssignmentView(ui.View):
@@ -30,5 +36,10 @@ class RoleAssignmentView(ui.View):
         super().__init__()
         self.selected_users = []
         self.skipped = False
+        self.interaction: Optional[discord.Interaction] = None
         self.add_item(MultiUserSelect(role_name, color))
         self.add_item(SkipButton())
+
+    def set_interaction(self, interaction: discord.Interaction):
+        """Stores the interaction to be used later for editing the message."""
+        self.interaction = interaction

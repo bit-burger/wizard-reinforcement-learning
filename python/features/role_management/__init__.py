@@ -74,6 +74,7 @@ async def role(interaction: discord.Interaction, role_name: str, color: str = '#
         return
     await ensure_space_for_role()
     view = RoleAssignmentView(role_name, color)
+    view.set_interaction(interaction)
     await interaction.followup.send(
         "Please select users to assign the role or press 'Skip':", view=view, ephemeral=True
     )
@@ -83,10 +84,15 @@ async def role(interaction: discord.Interaction, role_name: str, color: str = '#
     await swap_role_in(role_name, color, user_ids)
     if selected_users:
         user_mentions = ', '.join([user.mention for user in selected_users])
-        await interaction.followup.send(f"Role '{role_name}' created and assigned to: {user_mentions}.",
-                                        ephemeral=False)
+        await view.interaction.edit_original_response(
+            content=f"Role '{role_name}' created and assigned to: {user_mentions}.",
+            view=None
+        )
     else:
-        await interaction.followup.send(f"Role '{role_name}' created but not assigned to any users.", ephemeral=False)
+        await view.interaction.edit_original_response(
+            content=f"Role '{role_name}' created but not assigned to any users.",
+            view=None
+        )
 
 
 @tree.command(name="show_tags", description="lists all tags", guild=discord.Object(guild_id))
