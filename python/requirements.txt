@@ -17,3 +17,5 @@ setuptools==75.1.0
 six==1.16.0
 urllib3==2.2.3
 yarl==1.9.4
+
+discord~=2.3.2

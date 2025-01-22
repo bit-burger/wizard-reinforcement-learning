@@ -316,14 +316,12 @@ async def play_stich(game: GameState, interaction: discord.Interaction):
     game.current_player = winner_index
 
 
-async def play_card_for_player(game: GameState, player: Player, interaction: discord.Interaction,
-                               stichNummer: int = -1):
+async def play_card_for_player(game: GameState, player: Player, interaction: discord.Interaction, stichNummer: int = -1):
     global card_emojis
 
     # Prompt the player to play a card
     hand = "\n".join(
-        [f"{card_emojis[card.value] if card.value in [0, 14] else card_emojis[card.color]} {get_card_name(card)}" for
-         card in player.hand])
+        [f"{card_emojis[card.value] if card.value in [0, 14] else card_emojis[card.color]} {get_card_name(card)}" for card in player.hand])
     embed = discord.Embed(
         title=player.formatted_name + " Du bist dran!",
         description="Spiele eine Karte:",
@@ -332,6 +330,7 @@ async def play_card_for_player(game: GameState, player: Player, interaction: dis
     embed.add_field(name="Deine Hand", value=hand, inline=False)
 
     # Determine allowed cards
+    allowed_cards = player.hand  # Default to all cards in hand
     if game.stich:
         i = 0
         while game.stich[i].value in [0, 14] and i < len(game.stich) - 1:
@@ -347,14 +346,11 @@ async def play_card_for_player(game: GameState, player: Player, interaction: dis
 
         if not allowed_cards:
             allowed_cards = player.hand
-        else:
-            allowed_cards = player.hand
 
     class CardDropdown(Select):
         def __init__(self, allowed_cards: List[Card]):
             options = [discord.SelectOption(label=get_card_name(card), value=str(i),
-                                            emoji=card_emojis[card.value] if card.value in [0, 14] else card_emojis[
-                                                card.color])
+                                            emoji=card_emojis[card.value] if card.value in [0, 14] else card_emojis[card.color])
                        for i, card in enumerate(allowed_cards)]
             super().__init__(placeholder="Wähle eine Karte", min_values=1, max_values=1, options=options)
 
@@ -387,7 +383,6 @@ async def play_card_for_player(game: GameState, player: Player, interaction: dis
 
     # Update the combined trick and stich state
     await update_stich_state(game, interaction, stichNummer)
-
 
 last_stich_message_ids = {}
 

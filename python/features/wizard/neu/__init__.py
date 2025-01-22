@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import random
 from enum import Enum
@@ -250,7 +252,9 @@ class WizardPlayerApplication(ReactiveApplicationView):
         # colors = {Color.RED: "red", Color.GREEN: "green", Color.BLUE: "blue", Color.YELLOW: "yellow"}
         # return f"{card.value}"
         name = self.get_card_name(card)
+        debug = card_deck_info_json[name]
         return f"<:{name}:{card_deck_info_json[name]}>"
+
 
     def render(self) -> Iterator[str | discord.Embed | ui.Item]:
         state = self.room.game_state
@@ -264,7 +268,8 @@ class WizardPlayerApplication(ReactiveApplicationView):
         )
 
         # Trump and current stich information
-        trump_display = f"{card_emojis[state.trump.value] + card_emojis[state.trump.color] if state.trump.value in [0, 14] else card_emojis[state.trump.color]} {state.trump.value}"
+        #trump_display = f"{card_emojis[state.trump.value] + card_emojis[state.trump.color] if state.trump.value in [0, 14] else card_emojis[state.trump.color]} {state.trump.value}"
+        trump_display = self.get_card(state.trump)
         # embed.add_field(name="Trumpf", value=trump_display, inline=False)
 
         # Current stich
@@ -274,14 +279,14 @@ class WizardPlayerApplication(ReactiveApplicationView):
         for i in range(len(state.players)):
             player_index = (state.start_player + i) % len(state.players)
             p = state.players[player_index]
-            card_info = f"{card_emojis[state.stich[player_index].value] if state.stich[player_index].value in [0, 14] else card_emojis[state.stich[player_index].color]} {self.get_card(state.stich[player_index])}" if player_index < len(
-                state.stich) else "----"
+            #card_info = f"{card_emojis[state.stich[player_index].value] if state.stich[player_index].value in [0, 14] else card_emojis[state.stich[player_index].color]} {self.get_card(state.stich[player_index])}" if player_index < len(state.stich) else "----"
+            card_info = f"{self.get_card(state.stich[player_index])}" if player_index < len(state.stich) else "----"
             player_name = f"**{p.ping_player}**" if p == self else p.ping_player
-            player_str += f"{player_name}   [{p.score}]\n"
+            player_str += f"{player_name}  \n [{p.score}] {p.won_stiche}/{p.called_stiche}\n"
             stiche_str += f"{p.won_stiche}/{p.called_stiche}\n"
             card_str += f"{card_info}\n"
         embed.add_field(
-            name=f"Stich                                                                Trumpf: {trump_display}",
+            name=f"Stich                                                                 Trumpf: {trump_display}",
             value=" ", inline=False)
         embed.add_field(name="", value=player_str, inline=True)
         embed.add_field(name="", value=stiche_str, inline=True)

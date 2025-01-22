@@ -51,7 +51,7 @@ def filter_bot_entries(previous, current):
 @client.event
 async def voice_state_update(member, before, after):
     if member.bot:
-        return  # Bots sind von Strafen befreit
+        return  # Das moven von Bots wird ignoriert
 
     # Prüfen, ob jemand gemoved, gekickt, gemutet oder gedeafed wurde
     if before.channel != after.channel:  # Move oder Kick
