@@ -19,3 +19,4 @@ urllib3==2.2.3
 yarl==1.9.4
 
 discord~=2.3.2
+numpy~=2.2.0

@@ -37,6 +37,9 @@ async def on_ready():
     global db
     guild = await client.fetch_guild(guild_id)
     db = Database(guild)
+    top_role_id = 1209166286618361988
+    top_role = discord.utils.get(guild.roles, id=top_role_id)
+    print(f"WARNING: Role with ID {top_role_id} ({top_role.name}) is used as top role for paging algorithm")
 
 
 @tree.command(name="role", description="creates a role", guild=discord.Object(guild_id))
